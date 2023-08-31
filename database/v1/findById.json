@@ -1,0 +1,31 @@
+{
+  "id": 1,
+  "accountId": 1,
+  "orderNumber": "ord-feceaa9c-22da-430d-9396-50cc0ffd7ead",
+  "orderDate": "2023-08-29T02:30:03.360384900Z",
+  "shippingAddressId": null,
+  "orderLineItems": [{
+    "id": null,
+    "orderId": 1,
+    "productId": 1,
+    "shipmentId": null,
+    "quantity": 2,
+    "price": 10,
+    "totalPrice": 20,
+    "createDateTime": null,
+    "updateDateTime": null
+  }, {
+    "id": null,
+    "orderId": 1,
+    "productId": 3,
+    "shipmentId": null,
+    "quantity": 1,
+    "price": 13.99,
+    "totalPrice": 13.99,
+    "createDateTime": null,
+    "updateDateTime": null
+  }],
+  "totalPrice": 33.99,
+  "createDateTime": null,
+  "updateDateTime": null
+}

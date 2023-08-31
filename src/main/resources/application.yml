@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: orders-service
+  datasource:
+    url: jdbc:mysql://${DATA_HOSTNAME:localhost}:3333/ecommerce_orders_db?&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DATA_USERNAME:davidking}
+    password: ${DATA_PASSWORD:davidking!!}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+
+server:
+  port: 8004
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    statusPageUrl: https://${eureka.hostname}/info
+    healthCheckUrl: https://${eureka.hostname}/health
+    homePageUrl: https://${eureka.hostname}/

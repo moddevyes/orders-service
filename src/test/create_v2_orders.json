@@ -1,0 +1,21 @@
+{
+  "ordersAccount": {
+    "firstName": "DukeFirstName",
+    "lastName": "DukeLastName",
+    "emailAddress": "dukefirst.last@enjoy.com",
+    "addresses": [{
+      "address1": "100",
+      "address2": "",
+      "city": "Food Forest City",
+      "state": "FL",
+      "province": "",
+      "postalCode": "33000",
+      "country": "US"
+    }]
+  },
+  "orderNumber": "ord-44f833d7-9bbf-485c-9971-d5d49961b877",
+  "orderDate": "2023-08-31T02:14:22.169602800Z",
+  "ordersShippingAddress": null,
+  "orderLineItems": null,
+  "totalPrice": null
+}

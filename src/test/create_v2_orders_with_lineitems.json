@@ -1,0 +1,43 @@
+{
+  "ordersAccount": {
+    "firstName": "DukeFirstName",
+    "lastName": "DukeLastName",
+    "emailAddress": "dukefirst.last@enjoy.com",
+    "addresses": [{
+      "address1": "100",
+      "address2": "",
+      "city": "Food Forest City",
+      "state": "FL",
+      "province": "",
+      "postalCode": "33000",
+      "country": "US"
+    }]
+  },
+  "orderNumber": "ord-91aea2af-5e94-43cf-8592-353aa8124881",
+  "orderDate": "2023-08-31T02:20:39.719696800Z",
+  "ordersShippingAddress": {
+    "address1": "100",
+    "address2": "",
+    "city": "Food Forest City",
+    "state": "FL",
+    "province": "",
+    "postalCode": "33000",
+    "country": "US"
+  },
+  "orderLineItems": [{
+    "orderId": 1,
+    "productId": 3,
+    "shipmentId": null,
+    "quantity": 1,
+    "price": 13.99,
+    "totalPrice": 13.99
+  }, {
+    "orderId": 1,
+    "productId": 1,
+    "shipmentId": null,
+    "quantity": 2,
+    "price": 10,
+    "totalPrice": 20
+  }],
+  "totalPrice": 33.99
+}

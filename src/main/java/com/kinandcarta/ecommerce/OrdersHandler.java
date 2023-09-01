@@ -6,9 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -18,16 +16,44 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
     final
     OrderLineItemsRepository orderLineItemsRepository;
 
-    public OrdersHandler(OrdersRepository ordersRepository, OrderLineItemsRepository orderLineItemsRepository) {
+    final AccountClient accountClient;
+
+    final Map<String, String> errors;
+
+    public OrdersHandler(OrdersRepository ordersRepository, OrderLineItemsRepository orderLineItemsRepository, AccountClient accountClient) {
+        errors = new HashMap<>();
         this.ordersRepository = ordersRepository;
         this.orderLineItemsRepository = orderLineItemsRepository;
+        this.accountClient = accountClient;
     }
 
     @Override
     @Transactional
     public Orders create(Orders model) {
         log.debug("create: model ->" + model.toString());
+        try {
+            validate(model);
+        } catch (final Exception e) {
+            log.error("create::", e);
+        }
         return ordersRepository.save(model);
+    }
+
+    private void validate(Orders modelToValidate) {
+        // VERIFY__account_required?
+        if (modelToValidate.getOrdersAccount() == null) {
+            throw new MissingAccountException("MissingAccountException: valid Account required to create an Order.");
+        }
+
+        if (modelToValidate.getOrdersAccount().getId() == null) {
+            throw new MissingAccountException("MissingAccountException: valid Account required to create an Order.");
+        }
+
+        // VERIFY__lookup_account_byid
+        if (accountClient.findById(modelToValidate.getId()) == null) {
+            throw new InvalidAccountException("InvalidAccountException: valid Account required to create an Order.");
+        }
+
     }
 
     @Override

@@ -14,7 +14,6 @@ import java.util.Set;
 @RestController
 @Slf4j
 public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUseCases {
-
     final OrdersHandler ordersHandler;
 
     public OrdersController(OrdersHandler ordersHandler) {
@@ -28,6 +27,10 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
             return new ResponseEntity<>(ordersHandler.create(model), HttpStatus.OK);
         } catch (final Exception e) {
             log.error("::METHOD, create, exception occured.", e);
+            if (e instanceof InvalidAccountException) {
+                log.error("InvalidAccountException: valid Account required to create an Order.");
+                return ResponseEntity.badRequest().build();
+            }
             return ResponseEntity.notFound().build();
         }
     }

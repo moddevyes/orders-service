@@ -28,6 +28,8 @@ class OrdersHandlerTest {
 
     OrdersRepository ordersRepository = Mockito.mock(OrdersRepository.class);
     OrderLineItemsRepository orderLineItemsRepository = Mockito.mock(OrderLineItemsRepository.class);
+
+    AccountClient accountClient = Mockito.mock(AccountClient.class);
     OrdersHandler ordersHandler;
 
     final String orderNumber = "ord-" + UUID.randomUUID();
@@ -89,7 +91,7 @@ class OrdersHandlerTest {
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
 
     @BeforeEach void setUp() {
-        ordersHandler = new OrdersHandler(ordersRepository, orderLineItemsRepository);
+        ordersHandler = new OrdersHandler(ordersRepository, orderLineItemsRepository, accountClient);
         entityManager.persist(davidKingMoonMousePad);
         entityManager.persist(davidKingMoonMousePad_Order2);
         entityManager.persist(davidKingMoonMousePad_Order3);

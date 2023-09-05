@@ -1,5 +1,7 @@
 package com.kinandcarta.ecommerce;
 
+import com.kinandcarta.ecommerce.entities.Orders;
+
 import java.util.Set;
 
 public interface ServiceHandler {    

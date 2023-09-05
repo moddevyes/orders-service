@@ -1,8 +1,13 @@
 package com.kinandcarta.ecommerce;
 
+import com.kinandcarta.ecommerce.entities.OrderLineItems;
+import com.kinandcarta.ecommerce.entities.Orders;
+import com.kinandcarta.ecommerce.entities.OrdersAccount;
+import com.kinandcarta.ecommerce.entities.OrdersAddress;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,44 +21,38 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
     final
     OrderLineItemsRepository orderLineItemsRepository;
 
-    final AccountClient accountClient;
-
     final Map<String, String> errors;
 
-    public OrdersHandler(OrdersRepository ordersRepository, OrderLineItemsRepository orderLineItemsRepository, AccountClient accountClient) {
+    public OrdersHandler(OrdersRepository ordersRepository, OrderLineItemsRepository orderLineItemsRepository) {
         errors = new HashMap<>();
         this.ordersRepository = ordersRepository;
         this.orderLineItemsRepository = orderLineItemsRepository;
-        this.accountClient = accountClient;
     }
 
     @Override
     @Transactional
-    public Orders create(Orders model) {
-        log.debug("create: model ->" + model.toString());
-        try {
-            validate(model);
-        } catch (final Exception e) {
-            log.error("create::", e);
-        }
+    public Orders create(final Orders model) {
+        log.debug("create: model ->");
+        validate(model);
+        saveTransientModels(model);
         return ordersRepository.save(model);
     }
 
-    private void validate(Orders modelToValidate) {
+    private void saveTransientModels(final Orders model) {
+        // adding the save Orders..Account and Address before Orders and tests.
+    }
+
+    private void validate(final Orders modelToValidate) {
         // VERIFY__account_required?
-        if (modelToValidate.getOrdersAccount() == null) {
-            throw new MissingAccountException("MissingAccountException: valid Account required to create an Order.");
-        }
+        assertOrderHasAccount(modelToValidate);
 
-        if (modelToValidate.getOrdersAccount().getId() == null) {
-            throw new MissingAccountException("MissingAccountException: valid Account required to create an Order.");
-        }
+        OrdersAccount accountToRetrieveVerify = modelToValidate.getOrdersAccount();
 
-        // VERIFY__lookup_account_byid
-        if (accountClient.findById(modelToValidate.getId()) == null) {
-            throw new InvalidAccountException("InvalidAccountException: valid Account required to create an Order.");
-        }
+        // VERIFY__first_lastname_required
+        assertOrderAccountHasFirstandLastName(accountToRetrieveVerify);
 
+        // VERIFY__email_address_required
+        assertOrderAccountHasEmail(accountToRetrieveVerify);
     }
 
     @Override
@@ -100,7 +99,6 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
             orderExisting.setOrderLineItems(model.getOrderLineItems());
         }
 
-        // What are the rules for update?
         return ordersRepository.save(orderExisting);
     }
 
@@ -135,4 +133,22 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
     }
 
 
+    private static void assertOrderAccountHasEmail(OrdersAccount accountToRetrieveVerify) {
+        if (StringUtils.isEmpty(accountToRetrieveVerify.getEmailAddress())) {
+            throw new InvalidAccountException("InvalidAccountException: [valid E-mail Address] required to create an Order.");
+        }
+    }
+
+    private static void assertOrderAccountHasFirstandLastName(OrdersAccount accountToRetrieveVerify) {
+        if (StringUtils.isEmpty(accountToRetrieveVerify.getFirstName()) &&
+                StringUtils.isEmpty(accountToRetrieveVerify.getLastName()))  {
+            throw new InvalidAccountException("InvalidAccountException: [valid Account with First and Last name] required to create an Order.");
+        }
+    }
+
+    private static void assertOrderHasAccount(Orders modelToValidate) {
+        if (modelToValidate.getOrdersAccount() == null) {
+            throw new MissingAccountException("MissingAccountException: [valid Account] required to create an Order.");
+        }
+    }
 }

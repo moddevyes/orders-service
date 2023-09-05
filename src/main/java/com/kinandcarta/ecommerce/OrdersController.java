@@ -1,5 +1,7 @@
 package com.kinandcarta.ecommerce;
 
+import com.kinandcarta.ecommerce.entities.OrderLineItems;
+import com.kinandcarta.ecommerce.entities.Orders;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,11 +28,11 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
         try {
             return new ResponseEntity<>(ordersHandler.create(model), HttpStatus.OK);
         } catch (final Exception e) {
-            log.error("::METHOD, create, exception occured.", e);
-            if (e instanceof InvalidAccountException) {
-                log.error("InvalidAccountException: valid Account required to create an Order.");
-                return ResponseEntity.badRequest().build();
-            }
+            log.error("::METHOD, create, exception(s) occurred." + e);
+
+            if (e instanceof InvalidAccountException || e instanceof MissingAccountException)
+            { return ResponseEntity.badRequest().build(); }
+
             return ResponseEntity.notFound().build();
         }
     }
@@ -41,7 +43,7 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
         try {
             return new ResponseEntity<>(ordersHandler.update(id, model), HttpStatus.OK);
         } catch (final Exception e) {
-            log.error("::METHOD, update, exception occured.", e);
+            log.error("::METHOD, update, exception occurred.", e);
             return ResponseEntity.notFound().build();
         }
     }
@@ -53,7 +55,7 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
         try {
             ordersHandler.delete(id);
         } catch (final Exception e) {
-            log.error("::METHOD, delete, exception occured.", e);
+            log.error("::METHOD, delete, exception occurred.", e);
         }
     }
 
@@ -63,7 +65,7 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
         try {
             return new ResponseEntity<>(ordersHandler.findById(id), HttpStatus.OK);
         } catch (final Exception e) {
-            log.error("::METHOD, findById, exception occured.", e);
+            log.error("::METHOD, findById, exception occurred.", e);
             return ResponseEntity.notFound().build();
         }
     }
@@ -75,7 +77,7 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
             return new ResponseEntity<>(
                     Optional.ofNullable(ordersHandler.findAll()).orElse(new HashSet<>()), HttpStatus.OK);
         } catch (final Exception e) {
-            log.error("::METHOD, findAll, exception occured.", e);
+            log.error("::METHOD, findAll, exception occurred.", e);
             return ResponseEntity.notFound().build();
         }
     }
@@ -86,7 +88,7 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
         try {
             return new ResponseEntity<>(ordersHandler.findOrderLineItemsFor(id), HttpStatus.OK);
         } catch (final Exception e) {
-            log.error("::METHOD, findOrderLineItemsFor, exception occured.", e);
+            log.error("::METHOD, findOrderLineItemsFor, exception occurred.", e);
             return ResponseEntity.notFound().build();
         }
     }

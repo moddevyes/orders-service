@@ -3,10 +3,13 @@ package com.kinandcarta.ecommerce;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.kinandcarta.ecommerce.entities.OrderLineItems;
+import com.kinandcarta.ecommerce.entities.Orders;
+import com.kinandcarta.ecommerce.entities.OrdersAccount;
+import com.kinandcarta.ecommerce.entities.OrdersAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -29,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = OrdersController.class)
-@Import({OrdersHandler.class, AccountClient.class})
+@Import({OrdersHandler.class})
 class OrdersServiceIntegrationTests {
     @Autowired
     MockMvc mockMvc;

@@ -34,5 +34,6 @@ commerce:
     passwd: eurekapasswd
   clients:
     accounts:
-      baseUrl: http://${gateway.hostname}${gateway.port}
+      serviceName: accounts-service
+
       findbyIdUrl: /accounts/{id}

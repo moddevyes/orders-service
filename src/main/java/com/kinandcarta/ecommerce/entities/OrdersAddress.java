@@ -1,4 +1,4 @@
-package com.kinandcarta.ecommerce;
+package com.kinandcarta.ecommerce.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -6,8 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.time.Instant;
 import java.util.Objects;
 
 @Getter
@@ -55,6 +58,15 @@ public class OrdersAddress {
     @Size(max = 200, message = "Country must be between 0 and 200 characters")
     @Column(columnDefinition = "varchar(100) not null default ''")
     @NotNull private String country;
+
+    @CreationTimestamp
+    @Column(name="created_dt")
+    private Instant createDateTime;
+
+    @UpdateTimestamp
+    @Column(name="updated_dt")
+    private Instant updateDateTime;
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;

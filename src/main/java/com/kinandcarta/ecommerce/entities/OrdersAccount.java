@@ -1,49 +1,55 @@
-package com.kinandcarta.ecommerce;
+package com.kinandcarta.ecommerce.entities;
 
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
-
+import java.util.Set;
 
 @Getter
 @Setter
-@RequiredArgsConstructor
 @ToString
+@RequiredArgsConstructor
 @Builder
 @AllArgsConstructor
 @Entity
+@Table(name = "orders_account")
 @Slf4j
-@Table(name = "order_line_items")
-public class OrderLineItems {
-
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class OrdersAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
-    private Long orderId;
+    @Size(min = 2, max = 200, message = "First Name must be between 2 and 200 characters")
+    @Column(columnDefinition = "varchar(200) default ''", nullable = false)
+    private String firstName;
 
     @NotNull
-    private Long productId;
-
-
-    private Long shipmentId;
-
-    @NotNull
-    private int quantity;
+    @Size(min = 2, max = 200, message = "Last Name must be between 2 and 200 characters")
+    @Column(columnDefinition = "varchar(200) default ''", nullable = false)
+    private String lastName;
 
     @NotNull
-    private BigDecimal price;
+    @Email(message = "Invalid e-mail address.")
+    @Size(min = 3, max = 200, message = "Email address must be between 3 and 200 characters")
+    @Column(columnDefinition = "varchar(200) default ''", nullable = false, unique = true)
+    private String emailAddress;
 
-    private BigDecimal totalPrice;
+    @OneToMany(cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private Set<OrdersAddress> addresses;
 
     @CreationTimestamp
     @Column(name="created_dt")
@@ -60,7 +66,7 @@ public class OrderLineItems {
         Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        OrderLineItems that = (OrderLineItems) o;
+        OrdersAccount that = (OrdersAccount) o;
         return getId() != null && Objects.equals(getId(), that.getId());
     }
 

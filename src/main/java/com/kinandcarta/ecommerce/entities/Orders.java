@@ -1,4 +1,4 @@
-package com.kinandcarta.ecommerce;
+package com.kinandcarta.ecommerce.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -30,10 +30,10 @@ import java.util.Set;
 public class Orders {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(unique = true, nullable = false, name = "orders_id")
     private Long id;
 
-    @NotNull
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     public OrdersAccount ordersAccount;
 
     @Size(min = 10, max = 255, message = "Order number must be between 10 and 255 characters")
@@ -44,10 +44,10 @@ public class Orders {
     @NotNull
     private Instant orderDate;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     private OrdersAddress ordersShippingAddress;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL)
     @ToString.Exclude
     @Column
     private Set<OrderLineItems> orderLineItems;

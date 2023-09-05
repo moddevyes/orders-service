@@ -4,6 +4,8 @@ import com.kinandcarta.ecommerce.entities.OrderLineItems;
 import com.kinandcarta.ecommerce.entities.Orders;
 import com.kinandcarta.ecommerce.entities.OrdersAccount;
 import com.kinandcarta.ecommerce.entities.OrdersAddress;
+import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
+import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,14 +57,6 @@ class OrdersControllerTest {
 
     OrdersAccount ordersAccount = OrdersAccount.builder()
             .id(100L)
-            .firstName("DukeFirstName")
-            .lastName("DukeLastName")
-            .emailAddress("dukefirst.last@enjoy.com")
-            .addresses(
-                    Set.of(ordersAddress)).build();
-
-    OrdersAccount ordersAccountNoAccountId = OrdersAccount.builder()
-            .id(null)
             .firstName("DukeFirstName")
             .lastName("DukeLastName")
             .emailAddress("dukefirst.last@enjoy.com")

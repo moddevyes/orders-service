@@ -1,4 +1,4 @@
-package com.kinandcarta.ecommerce;
+package com.kinandcarta.ecommerce.infrastructure;
 
 import com.kinandcarta.ecommerce.entities.OrderLineItems;
 import org.springframework.data.jpa.repository.JpaRepository;

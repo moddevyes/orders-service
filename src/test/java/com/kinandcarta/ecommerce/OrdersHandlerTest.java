@@ -1,6 +1,10 @@
 package com.kinandcarta.ecommerce;
 
 import com.kinandcarta.ecommerce.entities.*;
+import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
+import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
+import com.kinandcarta.ecommerce.infrastructure.OrderLineItemsRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -146,7 +150,7 @@ class OrdersHandlerTest {
         when(ordersRepository.save(minimumOrderAccountFirstLastNull)).thenThrow(InvalidAccountException.class);
         assertThatThrownBy(() ->
             ordersHandler.create(minimumOrderAccountFirstLastNull)).isInstanceOf(InvalidAccountException.class)
-                .hasStackTraceContaining("com.kinandcarta.ecommerce.InvalidAccountException");
+                .hasStackTraceContaining("com.kinandcarta.ecommerce.exceptions.InvalidAccountException");
     }
 
     @Test
@@ -155,7 +159,7 @@ class OrdersHandlerTest {
         when(ordersRepository.save(minimumOrderNullAccount)).thenThrow(MissingAccountException.class);
         assertThatThrownBy(() ->
             ordersHandler.create(minimumOrderNullAccount)).isInstanceOf(MissingAccountException.class)
-                .hasStackTraceContaining("com.kinandcarta.ecommerce.MissingAccountException");
+                .hasStackTraceContaining("com.kinandcarta.ecommerce.exceptions.MissingAccountException");
     }
 
     @Test
@@ -164,7 +168,7 @@ class OrdersHandlerTest {
         when(ordersRepository.save(minimumOrderNullEmailAddress)).thenThrow(InvalidAccountException.class);
         assertThatThrownBy(() ->
                 ordersHandler.create(minimumOrderNullEmailAddress)).isInstanceOf(InvalidAccountException.class)
-                .hasStackTraceContaining("com.kinandcarta.ecommerce.InvalidAccountException");
+                .hasStackTraceContaining("com.kinandcarta.ecommerce.exceptions.InvalidAccountException");
     }
 
 

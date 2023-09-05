@@ -1,4 +1,4 @@
-package com.kinandcarta.ecommerce;
+package com.kinandcarta.ecommerce.contracts;
 
 import com.kinandcarta.ecommerce.entities.OrderLineItems;
 import org.springframework.http.ResponseEntity;

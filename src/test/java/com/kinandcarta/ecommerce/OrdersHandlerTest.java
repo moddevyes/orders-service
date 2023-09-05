@@ -3,7 +3,10 @@ package com.kinandcarta.ecommerce;
 import com.kinandcarta.ecommerce.entities.*;
 import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
+import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
 import com.kinandcarta.ecommerce.infrastructure.OrderLineItemsRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -15,10 +18,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,6 +34,8 @@ class OrdersHandlerTest {
 
     OrdersRepository ordersRepository = Mockito.mock(OrdersRepository.class);
     OrderLineItemsRepository orderLineItemsRepository = Mockito.mock(OrderLineItemsRepository.class);
+    OrdersAccountRepository ordersAccountRepository = Mockito.mock(OrdersAccountRepository.class);
+    OrdersAddressRepository ordersAddressRepository = Mockito.mock(OrdersAddressRepository.class);
     OrdersHandler ordersHandler;
 
     final String orderNumber = "ord-" + UUID.randomUUID();
@@ -54,6 +56,12 @@ class OrdersHandlerTest {
             .addresses(
                     Set.of(ordersAddress)).build();
 
+    OrdersAccount ordersAccountNullAccountAddress = OrdersAccount.builder()
+            .id(100L)
+            .firstName("DukeFirstName")
+            .lastName("DukeLastName")
+            .emailAddress("dukefirst.last@enjoy.com")
+            .addresses(null).build();
     OrdersAccount ordersAccountEmailNull = OrdersAccount.builder()
             .id(13L)
             .firstName("DukeFirstName")
@@ -72,23 +80,41 @@ class OrdersHandlerTest {
     Orders minimumOrderNullAccount = Orders.builder()
             .id(1L)
             .ordersAccount(null)
+            .ordersShippingAddress(ordersAddress)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+
+    Orders minimumOrderNullAccountAccount = Orders.builder()
+            .id(1L)
+            .ordersAccount(ordersAccountNullAccountAddress)
+            .ordersShippingAddress(ordersAddress)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+
+    Orders minimumOrderNullShippingAddress = Orders.builder()
+            .id(12L)
+            .ordersAccount(ordersAccount)
+            .ordersShippingAddress(null)
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC())).build();
 
     Orders minimumOrderNullEmailAddress = Orders.builder()
             .id(1L)
             .ordersAccount(ordersAccountEmailNull)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC())).build();
     Orders minimumOrder = Orders.builder()
             .id(1L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC())).build();
 
     Orders minimumOrderAccountFirstLastNull = Orders.builder()
             .id(1L)
             .ordersAccount(ordersAccountFirstLastNull)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC())).build();
     OrderLineItems firstProduct = OrderLineItems.builder()
@@ -109,30 +135,35 @@ class OrdersHandlerTest {
     Orders davidKingMoonMousePad = Orders.builder()
             .id(1L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     Orders davidKingMoonMousePad_Order2 = Orders.builder()
             .id(2L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber+"000")
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     Orders davidKingMoonMousePad_Order3 = Orders.builder()
             .id(3L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber+"333")
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     Orders davidKingMoonMousePad_Order4 = Orders.builder()
             .id(4L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber+"444")
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
 
     @BeforeEach void setUp() {
-        ordersHandler = new OrdersHandler(ordersRepository, orderLineItemsRepository);
+        ordersHandler = new OrdersHandler(ordersRepository, orderLineItemsRepository,
+                ordersAccountRepository, ordersAddressRepository);
         entityManager.persist(davidKingMoonMousePad);
         entityManager.persist(davidKingMoonMousePad_Order2);
         entityManager.persist(davidKingMoonMousePad_Order3);
@@ -154,6 +185,13 @@ class OrdersHandlerTest {
     }
 
     @Test
+    void shouldFail_toCreateNewOrder_whenShippingAddress_isNull() {
+        when(ordersRepository.save(minimumOrderNullShippingAddress)).thenThrow(MissingAddressException.class);
+        assertThatThrownBy(() ->
+                ordersHandler.create(minimumOrderNullShippingAddress)).isInstanceOf(MissingAddressException.class);
+    }
+
+    @Test
     // Null Account -> Missing Account Exception
     void shouldFail_toCreateNewOrder_whenAccount_isNull() {
         when(ordersRepository.save(minimumOrderNullAccount)).thenThrow(MissingAccountException.class);
@@ -171,8 +209,20 @@ class OrdersHandlerTest {
                 .hasStackTraceContaining("com.kinandcarta.ecommerce.exceptions.InvalidAccountException");
     }
 
-
+    @Test
+    // Null Address -> Missing Address Exception
+    void shouldFail_toCreateNewOrder_whenAccountAddress_isNull() {
+        when(ordersRepository.save(minimumOrderNullAccountAccount)).thenThrow(MissingAddressException.class);
+        assertThatThrownBy(() ->
+            ordersHandler.create(minimumOrderNullAccountAccount)).isInstanceOf(MissingAddressException.class);
+    }
     @Test void shouldCreateMultipleOrders_usingThe_SameAccount() {
+        // Save orders account
+        when(ordersAccountRepository.save(ordersAccount)).thenReturn(ordersAccount);
+
+        // Save orders address
+        when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
+
         // first order with OrdersAccount -> .id(100L)
         when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
 
@@ -180,9 +230,11 @@ class OrdersHandlerTest {
         when(ordersRepository.existsById(1L)).thenReturn(Boolean.TRUE);
         // find by id
         when(ordersRepository.getReferenceById(1L)).thenReturn(minimumOrder);
-//        when(ordersRepository.save(minimumOrderSameAccount)).thenReturn(minimumOrderSameAccount);
+        when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
 
         // when-then, first order
+        minimumOrder.setOrderLineItems(new HashSet<>());
+        minimumOrder.getOrderLineItems().add(firstProduct);
         Orders createFirstOrder = ordersHandler.create(minimumOrder);
         assertThat(createFirstOrder).isNotNull();
 
@@ -199,7 +251,13 @@ class OrdersHandlerTest {
     @Test
     void shouldCreateNewOrder_withMinimumFields() {
         // create
+        // Save orders account
+        when(ordersAccountRepository.save(ordersAccount)).thenReturn(ordersAccount);
+        // Save orders address
+        when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
         when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
+        minimumOrder.setOrderLineItems(new HashSet<>());
+        minimumOrder.getOrderLineItems().add(firstProduct);
         Orders createOrderCommand = ordersHandler.create(minimumOrder);
         assertThat(createOrderCommand).isNotNull();
         assertThat(createOrderCommand.getId()).isEqualTo(1L);

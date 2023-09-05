@@ -1,16 +1,17 @@
 
 CREATE TABLE orders_address
 (
-    id          BIGINT AUTO_INCREMENT   NOT NULL,
-    address1    VARCHAR(200) DEFAULT '' NOT NULL,
-    address2    VARCHAR(200) DEFAULT '' NULL,
-    city        VARCHAR(200) DEFAULT '' NOT NULL,
-    state       VARCHAR(2)   DEFAULT '' NOT NULL,
-    province    VARCHAR(200)            null DEFAULT '' NULL,
-    postal_code VARCHAR(10)  DEFAULT '' NOT NULL,
-    country     VARCHAR(100) DEFAULT '' NOT NULL,
-    created_dt  datetime                NULL,
-    updated_dt  datetime                NULL,
+    id                  BIGINT AUTO_INCREMENT   NOT NULL,
+    address1            VARCHAR(200) DEFAULT '' NOT NULL,
+    address2            VARCHAR(200) DEFAULT '' NULL,
+    city                VARCHAR(200) DEFAULT '' NOT NULL,
+    state               VARCHAR(2)   DEFAULT '' NOT NULL,
+    province            VARCHAR(200)            null DEFAULT '' NULL,
+    postal_code         VARCHAR(10)  DEFAULT '' NOT NULL,
+    country             VARCHAR(100) DEFAULT '' NOT NULL,
+    is_shipping_address BIT(1)                  NOT NULL DEFAULT 0,
+    created_dt          datetime                NULL,
+    updated_dt          datetime                NULL,
     CONSTRAINT pk_orders_address PRIMARY KEY (id)
 );
 
@@ -49,3 +50,6 @@ ALTER TABLE orders
 
 ALTER TABLE orders
     ADD CONSTRAINT FK_ORDERS_ON_ORDERSSHIPPINGADDRESS FOREIGN KEY (orders_shipping_address_id) REFERENCES orders_address (id);
+
+ALTER TABLE orders_address
+    ADD COLUMN     is_shipping_address BIT(1)                  NOT NULL DEFAULT 0;

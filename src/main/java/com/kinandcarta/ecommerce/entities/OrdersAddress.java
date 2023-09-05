@@ -59,6 +59,8 @@ public class OrdersAddress {
     @Column(columnDefinition = "varchar(100) not null default ''")
     @NotNull private String country;
 
+    private boolean isShippingAddress;
+
     @CreationTimestamp
     @Column(name="created_dt")
     private Instant createDateTime;

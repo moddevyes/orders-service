@@ -8,6 +8,8 @@ import com.kinandcarta.ecommerce.entities.Orders;
 import com.kinandcarta.ecommerce.entities.OrdersAccount;
 import com.kinandcarta.ecommerce.entities.OrdersAddress;
 import com.kinandcarta.ecommerce.infrastructure.OrderLineItemsRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -44,6 +47,10 @@ class OrdersServiceIntegrationTests {
 
     @MockBean
     OrderLineItemsRepository orderLineItemsRepository;
+    @MockBean
+    OrdersAccountRepository ordersAccountRepository;
+    @MockBean
+    OrdersAddressRepository ordersAddressRepository;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -74,10 +81,27 @@ class OrdersServiceIntegrationTests {
 
     @Test
     void shouldCreateAnOrder_withMinimumFields() throws Exception {
+        OrderLineItems firstProduct = OrderLineItems.builder()
+                .id(3L)
+                .orderId(1L)
+                .quantity(2)
+                .price(new BigDecimal("10"))
+                .productId(1L)
+                .build();
+        OrderLineItems secondProduct = OrderLineItems.builder()
+                .id(4L)
+                .orderId(1L)
+                .quantity(1)
+                .price(new BigDecimal("13.99"))
+                .productId(3L)
+                .build();
+        Optional<OrdersAddress> addressForShipping = ordersAccount.getAddresses().stream().findFirst();
         Orders save = Orders.builder()
                 .id(1L)
                 .ordersAccount(ordersAccount)
                 .orderNumber(orderNumber)
+                .ordersShippingAddress(addressForShipping.orElse(OrdersAddress.builder().build()))
+                .orderLineItems(Set.of(firstProduct, secondProduct))
                 .orderDate(Instant.now())
                 .build();
 
@@ -104,16 +128,23 @@ class OrdersServiceIntegrationTests {
                         .orderDate(Instant.now())
                         .build());
 
+        // Save orders account
+        when(ordersAccountRepository.save(ordersAccount)).thenReturn(ordersAccount);
+        // Save orders address
+        when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
+
         when(ordersRepository.save(Orders.builder()
                 .id(20L)
                 .ordersAccount(ordersAccount)
                 .orderNumber(orderNumber)
                 .orderDate(Instant.now())
+                .ordersShippingAddress(ordersAddress)
                 .build())).thenReturn(Orders.builder()
                 .id(20L)
                 .ordersAccount(ordersAccount)
                 .orderNumber(orderNumber)
                 .orderDate(Instant.now())
+                .ordersShippingAddress(ordersAddress)
                 .build());
 
         when(ordersRepository.existsById(20L)).thenReturn(Boolean.TRUE);
@@ -124,6 +155,7 @@ class OrdersServiceIntegrationTests {
                         .ordersAccount(ordersAccount)
                         .orderNumber(orderNumber)
                         .orderDate(Instant.now())
+                        .ordersShippingAddress(ordersAddress)
                         .build());
 
         mockMvc.perform(MockMvcRequestBuilders.put("/orders/{id}", 20L)

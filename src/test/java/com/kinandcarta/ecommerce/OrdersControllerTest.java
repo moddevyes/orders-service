@@ -6,6 +6,7 @@ import com.kinandcarta.ecommerce.entities.OrdersAccount;
 import com.kinandcarta.ecommerce.entities.OrdersAddress;
 import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
+import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,11 +18,12 @@ import org.springframework.http.ResponseEntity;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 @Slf4j
@@ -98,6 +100,13 @@ class OrdersControllerTest {
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC())).build();
 
+    Orders minimumOrderNullAddress = Orders.builder()
+            .id(12L)
+            .ordersAccount(ordersAccount)
+            .ordersShippingAddress(null)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+
     Orders minimumOrderNoEmailAddress = Orders.builder()
             .id(1L)
             .ordersAccount(ordersAccountEmailNull)
@@ -162,6 +171,13 @@ class OrdersControllerTest {
     }
 
     @Test
+    void createOrderFails_whenAccountIsMissing_Address() {
+        verifyOrderNotCreated_whenAccount_orAccount_Address_IsNull(minimumOrderNullAddress);
+        ResponseEntity<Orders> orderCreated = controller.create(minimumOrderNullAddress);
+        assertThat(orderCreated).isEqualTo(ResponseEntity.badRequest().build());
+    }
+
+    @Test
     void createOrderFails_ForMissingAccount_EmailAddress() {
         verifyOrderNotCreated_whenAccount_FirstLastName_or_Email_IsNull(minimumOrderNoEmailAddress);
         ResponseEntity<Orders> orderCreated = controller.create(minimumOrderNoEmailAddress);
@@ -175,6 +191,39 @@ class OrdersControllerTest {
         assertThat(orderCreated).isEqualTo(ResponseEntity.badRequest().build());
     }
 
+    @Test
+    void shouldUpdate_Order() {
+        // get it
+        when(ordersHandler.update(1L, minimumOrder)).thenReturn(minimumOrder);
+        ResponseEntity<Orders> toUpdate = controller.update(1L, minimumOrder);
+        assertThat(toUpdate).isNotNull();
+        assertThat(toUpdate.getBody()).isNotNull();
+        // update
+        Orders updatingOrder = toUpdate.getBody();
+        updatingOrder.setOrderLineItems(new HashSet<>());
+        updatingOrder.setOrderLineItems(Set.of(firstProduct, secondProduct));
+        updatingOrder.setOrdersShippingAddress(ordersAddress);
+        updatingOrder.setUpdateDateTime(Instant.now(Clock.systemUTC()));
+        updatingOrder.getOrdersShippingAddress().setShippingAddress(Boolean.TRUE);
+        // verify updates
+        assertThat(minimumOrder.getOrdersAccount()).isEqualTo(updatingOrder.getOrdersAccount());
+        assertThat(minimumOrder.getOrdersShippingAddress()).isNotNull();
+        assertThat(minimumOrder.getOrdersShippingAddress().isShippingAddress()).isTrue();
+    }
+
+    @Test
+    void shouldDelete_Order() {
+        when(ordersHandler.create(minimumOrder)).thenReturn(minimumOrder);
+        doNothing().when(ordersHandler).delete(minimumOrder.getId());
+        ResponseEntity<Orders> orderCreated = controller.create(minimumOrder);
+        assertThat(orderCreated).isNotNull();
+        assertThat(orderCreated.getBody()).isNotNull();
+        assertThat(orderCreated.getBody().getId()).isEqualTo(1L);
+
+        controller.delete(1L);
+
+        verify(ordersHandler, times(1)).delete(1L);
+    }
 
     // - BASE_CASE__create_minimum_order, verifies the minimum fields are present.
     private Orders createOrder_VerifyMinimumFields(final Orders orderCreateCommand) {
@@ -191,7 +240,8 @@ class OrdersControllerTest {
     private void verifyOrderNotCreated_whenAccount_FirstLastName_or_Email_IsNull(final Orders invalidOrderCreateCommand) {
         when(ordersHandler.create(invalidOrderCreateCommand)).thenThrow(InvalidAccountException.class);
     }
-
-
+    private void verifyOrderNotCreated_whenAccount_orAccount_Address_IsNull(final Orders minimumOrderNullAddress) {
+        when(ordersHandler.create(minimumOrderNullAddress)).thenThrow(MissingAddressException.class);
+    }
 
 }

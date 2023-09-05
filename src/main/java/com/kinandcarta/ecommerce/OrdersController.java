@@ -6,6 +6,8 @@ import com.kinandcarta.ecommerce.entities.OrderLineItems;
 import com.kinandcarta.ecommerce.entities.Orders;
 import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
+import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
+import com.kinandcarta.ecommerce.exceptions.OrderModelNotPersistedException;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,10 +36,14 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
         } catch (final Exception e) {
             log.error("::METHOD, create, exception(s) occurred." + e);
 
-            if (e instanceof InvalidAccountException || e instanceof MissingAccountException)
+            if (e instanceof InvalidAccountException ||
+                    e instanceof MissingAccountException ||
+                    e instanceof MissingAddressException ||
+                    e instanceof OrderModelNotPersistedException)
             { return ResponseEntity.badRequest().build(); }
 
             return ResponseEntity.notFound().build();
+
         }
     }
 

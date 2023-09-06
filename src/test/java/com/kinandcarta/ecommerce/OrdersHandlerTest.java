@@ -4,9 +4,9 @@ import com.kinandcarta.ecommerce.entities.*;
 import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
-import com.kinandcarta.ecommerce.infrastructure.OrderLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +33,7 @@ class OrdersHandlerTest {
     TestEntityManager entityManager = Mockito.mock(TestEntityManager.class);
 
     OrdersRepository ordersRepository = Mockito.mock(OrdersRepository.class);
-    OrderLineItemsRepository orderLineItemsRepository = Mockito.mock(OrderLineItemsRepository.class);
+    OrdersLineItemsRepository ordersLineItemsRepository = Mockito.mock(OrdersLineItemsRepository.class);
     OrdersAccountRepository ordersAccountRepository = Mockito.mock(OrdersAccountRepository.class);
     OrdersAddressRepository ordersAddressRepository = Mockito.mock(OrdersAddressRepository.class);
     OrdersHandler ordersHandler;
@@ -163,7 +163,7 @@ class OrdersHandlerTest {
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
 
     @BeforeEach void setUp() {
-        ordersHandler = new OrdersHandler(ordersRepository, orderLineItemsRepository,
+        ordersHandler = new OrdersHandler(ordersRepository, ordersLineItemsRepository,
                 ordersAccountRepository, ordersAddressRepository);
 
         // Orders
@@ -234,8 +234,6 @@ class OrdersHandlerTest {
         when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
 
         when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
-
-
 
         Orders createOrderCommand = ordersHandler.create(minimumOrder);
 
@@ -316,4 +314,36 @@ class OrdersHandlerTest {
 
     }
 
+    @Test void shouldFindAllOrdersFor_OrderId() {
+        Orders toFind = Orders.builder()
+                .id(1L)
+                .ordersAccount(ordersAccount)
+                .orderNumber(orderNumber)
+                .orderLineItems(
+                        Set.of(
+                                OrderLineItems.builder()
+                                        .orderId(1L)
+                                        .quantity(2)
+                                        .price(new BigDecimal("10"))
+                                        .productId(1L)
+                                        .build(),
+                                OrderLineItems.builder()
+                                        .orderId(1L)
+                                        .quantity(1)
+                                        .price(new BigDecimal("13.99"))
+                                        .productId(3L)
+                                        .build()
+                        )
+                )
+                .orderDate(Instant.now()).build();
+
+        toFind.sumLineItems(toFind.getOrderLineItems());
+
+        when(ordersRepository.save(toFind)).thenReturn(toFind);
+        when (ordersRepository.existsById(1L)).thenReturn(Boolean.TRUE);
+        when(ordersRepository.getReferenceById(1L)).thenReturn(toFind);
+
+        Set<OrderLineItems> itemsForOrderId = ordersHandler.findOrderLineItemsFor(1L);
+        assertThat(itemsForOrderId).isNotNull().hasSize(2);
+    }
 }

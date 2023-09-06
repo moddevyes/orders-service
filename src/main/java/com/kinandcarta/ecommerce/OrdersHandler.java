@@ -10,9 +10,9 @@ import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
 import com.kinandcarta.ecommerce.exceptions.OrderModelNotPersistedException;
-import com.kinandcarta.ecommerce.infrastructure.OrderLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -29,7 +29,7 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
     final
     OrdersRepository ordersRepository;
     final
-    OrderLineItemsRepository orderLineItemsRepository;
+    OrdersLineItemsRepository ordersLineItemsRepository;
 
     final OrdersAccountRepository ordersAccountRepository;
     final OrdersAddressRepository ordersAddressRepository;
@@ -37,14 +37,14 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
     final Map<String, String> errors;
 
     public OrdersHandler(OrdersRepository ordersRepository,
-                         OrderLineItemsRepository orderLineItemsRepository,
+                         OrdersLineItemsRepository ordersLineItemsRepository,
                          OrdersAccountRepository ordersAccountRepository,
                          OrdersAddressRepository ordersAddressRepository) {
         this.ordersAccountRepository = ordersAccountRepository;
         this.ordersAddressRepository = ordersAddressRepository;
         errors = new HashMap<>();
         this.ordersRepository = ordersRepository;
-        this.orderLineItemsRepository = orderLineItemsRepository;
+        this.ordersLineItemsRepository = ordersLineItemsRepository;
     }
 
     @Override

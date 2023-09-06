@@ -225,6 +225,22 @@ class OrdersControllerTest {
         verify(ordersHandler, times(1)).delete(1L);
     }
 
+    @Test void shouldFindAllOrderLineItems_forGivenOrdersId() {
+        Set<OrderLineItems> itemsFoundry = findOrderLineItems_byOrderId(1L);
+        assertThat(itemsFoundry).isNotNull().containsExactlyInAnyOrder(firstProduct, secondProduct);
+    }
+
+    @Test void shouldFindAll_Orders() {
+        assertThat(findAllOrders()).contains(davidKingMoonMousePad);
+    }
+
+    @Test void verifyOrderDetailsView_containsExpectedData() {
+        /*
+
+         */
+    }
+
+
     // - BASE_CASE__create_minimum_order, verifies the minimum fields are present.
     private Orders createOrder_VerifyMinimumFields(final Orders orderCreateCommand) {
         when(ordersHandler.create(orderCreateCommand)).thenReturn(orderCreateCommand);
@@ -232,6 +248,22 @@ class OrdersControllerTest {
         assertThat(orderCreated).isNotNull();
         assertThat(orderCreated.getBody()).isNotNull();
         return orderCreated.getBody();
+    }
+
+    private Set<OrderLineItems> findOrderLineItems_byOrderId(final Long itemsForOrderId) {
+        when(ordersHandler.findOrderLineItemsFor(itemsForOrderId)).thenReturn(Set.of(firstProduct, secondProduct));
+        ResponseEntity<Set<OrderLineItems>> findAllOrderLineItemsForOrderId = controller.findOrderLineItemsFor(itemsForOrderId);
+        assertThat(findAllOrderLineItemsForOrderId).isNotNull();
+        assertThat(findAllOrderLineItemsForOrderId.getBody()).isNotNull().hasSize(2);
+        return findAllOrderLineItemsForOrderId.getBody();
+    }
+
+    private Set<Orders> findAllOrders() {
+        when(ordersHandler.findAll()).thenReturn(Set.of(davidKingMoonMousePad));
+        ResponseEntity<Set<Orders>> ordersSet = controller.findAll();
+        assertThat(ordersSet).isNotNull();
+        assertThat(ordersSet.getBody()).isNotNull().hasSize(1);
+        return ordersSet.getBody();
     }
 
     private void verifyOrderNotCreated_whenAccount_orAccountId_IsNull(final Orders invalidOrderCreateCommand) {

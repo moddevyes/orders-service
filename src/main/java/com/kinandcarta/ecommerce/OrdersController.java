@@ -110,4 +110,5 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
             return ResponseEntity.notFound().build();
         }
     }
+
 }

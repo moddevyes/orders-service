@@ -7,9 +7,9 @@ import com.kinandcarta.ecommerce.entities.OrderLineItems;
 import com.kinandcarta.ecommerce.entities.Orders;
 import com.kinandcarta.ecommerce.entities.OrdersAccount;
 import com.kinandcarta.ecommerce.entities.OrdersAddress;
-import com.kinandcarta.ecommerce.infrastructure.OrderLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ class OrdersServiceIntegrationTests {
     OrdersRepository ordersRepository;
 
     @MockBean
-    OrderLineItemsRepository orderLineItemsRepository;
+    OrdersLineItemsRepository ordersLineItemsRepository;
     @MockBean
     OrdersAccountRepository ordersAccountRepository;
     @MockBean

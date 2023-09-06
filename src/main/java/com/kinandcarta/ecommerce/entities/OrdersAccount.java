@@ -47,7 +47,7 @@ public class OrdersAccount {
     @Column(columnDefinition = "varchar(200) default ''", nullable = false, unique = true)
     private String emailAddress;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<OrdersAddress> addresses;
 

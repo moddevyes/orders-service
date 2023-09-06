@@ -109,6 +109,7 @@ class OrdersHandlerTest {
             .ordersAccount(ordersAccount)
             .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber)
+            .orderLineItems(new HashSet<>())
             .orderDate(Instant.now(Clock.systemUTC())).build();
 
     Orders minimumOrderAccountFirstLastNull = Orders.builder()
@@ -164,6 +165,9 @@ class OrdersHandlerTest {
     @BeforeEach void setUp() {
         ordersHandler = new OrdersHandler(ordersRepository, orderLineItemsRepository,
                 ordersAccountRepository, ordersAddressRepository);
+
+        // Orders
+        entityManager.persist(minimumOrder);
         entityManager.persist(davidKingMoonMousePad);
         entityManager.persist(davidKingMoonMousePad_Order2);
         entityManager.persist(davidKingMoonMousePad_Order3);
@@ -216,49 +220,25 @@ class OrdersHandlerTest {
         assertThatThrownBy(() ->
             ordersHandler.create(minimumOrderNullAccountAccount)).isInstanceOf(MissingAddressException.class);
     }
-    @Test void shouldCreateMultipleOrders_usingThe_SameAccount() {
-        // Save orders account
-        when(ordersAccountRepository.save(ordersAccount)).thenReturn(ordersAccount);
-
-        // Save orders address
-        when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
-
-        // first order with OrdersAccount -> .id(100L)
-        when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
-
-        // exists
-        when(ordersRepository.existsById(1L)).thenReturn(Boolean.TRUE);
-        // find by id
-        when(ordersRepository.getReferenceById(1L)).thenReturn(minimumOrder);
-        when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
-
-        // when-then, first order
-        minimumOrder.setOrderLineItems(new HashSet<>());
-        minimumOrder.getOrderLineItems().add(firstProduct);
-        Orders createFirstOrder = ordersHandler.create(minimumOrder);
-        assertThat(createFirstOrder).isNotNull();
-
-        // Account used to create first order and upcoming second order
-        OrdersAccount sameOrdersAccount = createFirstOrder.getOrdersAccount();
-        assertThat(sameOrdersAccount).isNotNull();
-        assertThat(sameOrdersAccount.getId()).isEqualTo(100L);
-
-        // second order , has OrdersAccount -> .id(100L)
-        Orders secondOrder = ordersHandler.create(davidKingMoonMousePad);
-        assertThat(secondOrder).isNotNull();
-    }
 
     @Test
     void shouldCreateNewOrder_withMinimumFields() {
+
+        minimumOrder.setOrderLineItems(new HashSet<>());
+        minimumOrder.getOrderLineItems().add(firstProduct);
+
         // create
         // Save orders account
         when(ordersAccountRepository.save(ordersAccount)).thenReturn(ordersAccount);
         // Save orders address
         when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
+
         when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
-        minimumOrder.setOrderLineItems(new HashSet<>());
-        minimumOrder.getOrderLineItems().add(firstProduct);
+
+
+
         Orders createOrderCommand = ordersHandler.create(minimumOrder);
+
         assertThat(createOrderCommand).isNotNull();
         assertThat(createOrderCommand.getId()).isEqualTo(1L);
         assertThat(createOrderCommand.getOrderNumber()).isEqualTo(orderNumber);

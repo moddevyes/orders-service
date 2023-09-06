@@ -30,10 +30,10 @@ import java.util.Set;
 public class Orders {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(unique = true, nullable = false, name = "orders_id")
+    @Column(unique = true, nullable = false, name = "id")
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     public OrdersAccount ordersAccount;
 
     @Size(min = 10, max = 255, message = "Order number must be between 10 and 255 characters")
@@ -44,13 +44,8 @@ public class Orders {
     @NotNull
     private Instant orderDate;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private OrdersAddress ordersShippingAddress;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @Column
-    private Set<OrderLineItems> orderLineItems;
 
     @Column(columnDefinition = "decimal(38, 2) null default 0")
     private BigDecimal totalPrice;
@@ -62,6 +57,10 @@ public class Orders {
     @UpdateTimestamp
     @Column(name="updated_dt")
     private Instant updateDateTime;
+
+    @ToString.Exclude
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<OrderLineItems> orderLineItems;
 
     public BigDecimal sumLineItems(final Set<OrderLineItems> lineItems) {
         Set<OrderLineItems> items =
@@ -77,15 +76,12 @@ public class Orders {
         this.setTotalPrice(total.orElse(BigDecimal.ZERO));
         return total.orElse(BigDecimal.ZERO);
     }
-    public BigDecimal computeTotalPrice(final BigDecimal price, final int quantity) {
-        return price.multiply(BigDecimal.valueOf(quantity));
-    }
+
     public BigDecimal computeTotalPrice(final OrderLineItems lineItem) {
         BigDecimal totalLineItemPrice = lineItem.getPrice().multiply(BigDecimal.valueOf(lineItem.getQuantity()));
         lineItem.setTotalPrice(totalLineItemPrice);
         return totalLineItemPrice;
     }
-
 
     @Override
     public final boolean equals(Object o) {

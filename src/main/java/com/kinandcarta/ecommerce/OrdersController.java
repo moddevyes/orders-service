@@ -32,6 +32,8 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
     @PostMapping(value = "/orders", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Orders> create(@RequestBody final Orders model) {
         try {
+            if (model == null) return ResponseEntity.badRequest().build();
+
             return new ResponseEntity<>(ordersHandler.create(model), HttpStatus.OK);
         } catch (final Exception e) {
             log.error("::METHOD, create, exception(s) occurred." + e);
@@ -51,6 +53,8 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
     @PutMapping(value = "/orders/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Orders> update(@PathVariable("id") @NotNull final Long id, @RequestBody Orders model) {
         try {
+            if (id == null) return ResponseEntity.badRequest().build();
+
             return new ResponseEntity<>(ordersHandler.update(id, model), HttpStatus.OK);
         } catch (final Exception e) {
             log.error("::METHOD, update, exception occurred.", e);
@@ -63,6 +67,8 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
     @DeleteMapping(value = "/orders/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public void delete(@PathVariable("id") @NotNull final Long id) {
         try {
+            if (id == null) return;
+
             ordersHandler.delete(id);
         } catch (final Exception e) {
             log.error("::METHOD, delete, exception occurred.", e);
@@ -73,6 +79,8 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
     @GetMapping(value = "/orders/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Orders> findById(@PathVariable("id") @NotNull final Long id) {
         try {
+            if (id == null) return ResponseEntity.badRequest().build();
+
             return new ResponseEntity<>(ordersHandler.findById(id), HttpStatus.OK);
         } catch (final Exception e) {
             log.error("::METHOD, findById, exception occurred.", e);

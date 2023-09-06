@@ -25,13 +25,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
@@ -73,6 +73,15 @@ class OrdersServiceIntegrationTests {
             .addresses(
                     Set.of(ordersAddress)).build();
 
+    OrderLineItems firstProduct = OrderLineItems.builder()
+            .id(3L)
+            .orderId(1L)
+            .quantity(2)
+            .price(new BigDecimal("10"))
+            .totalPrice(new BigDecimal("10"))
+            .productId(1L)
+            .build();
+
     @BeforeEach
     void setUp() {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -81,35 +90,17 @@ class OrdersServiceIntegrationTests {
 
     @Test
     void shouldCreateAnOrder_withMinimumFields() throws Exception {
-        OrderLineItems firstProduct = OrderLineItems.builder()
-                .id(3L)
-                .orderId(1L)
-                .quantity(2)
-                .price(new BigDecimal("10"))
-                .productId(1L)
-                .build();
-        OrderLineItems secondProduct = OrderLineItems.builder()
-                .id(4L)
-                .orderId(1L)
-                .quantity(1)
-                .price(new BigDecimal("13.99"))
-                .productId(3L)
-                .build();
-        Optional<OrdersAddress> addressForShipping = ordersAccount.getAddresses().stream().findFirst();
-        Orders save = Orders.builder()
+        Orders minimumOrder = Orders.builder()
                 .id(1L)
                 .ordersAccount(ordersAccount)
+                .ordersShippingAddress(ordersAddress)
                 .orderNumber(orderNumber)
-                .ordersShippingAddress(addressForShipping.orElse(OrdersAddress.builder().build()))
-                .orderLineItems(Set.of(firstProduct, secondProduct))
-                .orderDate(Instant.now())
-                .build();
+                .orderLineItems(new HashSet<>())
+                .orderDate(Instant.now(Clock.systemUTC())).build();
 
-        final String json = mapper.writeValueAsString(save);
+        final String json = mapper.writeValueAsString(minimumOrder);
 
-        given(ordersRepository.save(save)).willReturn(save);
-
-        when(ordersRepository.getReferenceById(1L)).thenReturn(save);
+        when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/orders")
                         .accept(MediaType.APPLICATION_JSON)
@@ -128,23 +119,16 @@ class OrdersServiceIntegrationTests {
                         .orderDate(Instant.now())
                         .build());
 
-        // Save orders account
-        when(ordersAccountRepository.save(ordersAccount)).thenReturn(ordersAccount);
-        // Save orders address
-        when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
-
         when(ordersRepository.save(Orders.builder()
                 .id(20L)
                 .ordersAccount(ordersAccount)
                 .orderNumber(orderNumber)
                 .orderDate(Instant.now())
-                .ordersShippingAddress(ordersAddress)
                 .build())).thenReturn(Orders.builder()
                 .id(20L)
                 .ordersAccount(ordersAccount)
                 .orderNumber(orderNumber)
                 .orderDate(Instant.now())
-                .ordersShippingAddress(ordersAddress)
                 .build());
 
         when(ordersRepository.existsById(20L)).thenReturn(Boolean.TRUE);
@@ -155,7 +139,6 @@ class OrdersServiceIntegrationTests {
                         .ordersAccount(ordersAccount)
                         .orderNumber(orderNumber)
                         .orderDate(Instant.now())
-                        .ordersShippingAddress(ordersAddress)
                         .build());
 
         mockMvc.perform(MockMvcRequestBuilders.put("/orders/{id}", 20L)

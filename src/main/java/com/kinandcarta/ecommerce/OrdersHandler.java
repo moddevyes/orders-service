@@ -21,7 +21,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -56,36 +55,23 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
 
         validateOrdersAddress(model);
 
+        Orders persisted = null;
         try {
-            saveTransientModels(model);
+            persisted = saveTransientModels(model);
         } catch (final OrderModelNotPersistedException e) {
             throw new OrderModelNotPersistedException(e.toString());
         }
 
-        return ordersRepository.save(model);
+        return Optional.of(persisted).orElseThrow(new OrderModelNotPersistedException("Order save failed."));
     }
 
-    private void saveTransientModels(final Orders model) throws OrderModelNotPersistedException {
+    private Orders saveTransientModels(final Orders model) throws OrderModelNotPersistedException {
+        log.debug("METHOD, saveTransientModels");
         // Orders Account
         try {
-
             Objects.requireNonNull(model.getOrdersAccount().getAddresses().stream().toList(), "Account requires at least one Address to create an Order.");
             Objects.requireNonNull(model.getOrderLineItems(), "Orders requires at lease one order line item.");
-
-            OrdersAccount persistedAccount = ordersAccountRepository.save(model.getOrdersAccount());
-            OrdersAddress persistedAddress = ordersAddressRepository.save(model.getOrdersShippingAddress());
-            Set<OrderLineItems> orderLineItems = model.getOrderLineItems();
-
-            Orders modelToPersist = Orders.builder()
-                    .orderNumber(model.getOrderNumber())
-                    .orderDate(Instant.now())
-                    .ordersShippingAddress(persistedAddress)
-                    .ordersAccount(persistedAccount)
-                    .orderLineItems(orderLineItems)
-                    .totalPrice(model.sumLineItems(orderLineItems))
-                    .build();
-
-            ordersRepository.save(modelToPersist);
+            return ordersRepository.save(model);
 
         } catch (Exception e) {
             throw new OrderModelNotPersistedException("Orders persist FAILED.");

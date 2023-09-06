@@ -1,7 +1,9 @@
 package com.kinandcarta.ecommerce.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.CreationTimestamp;
@@ -22,14 +24,14 @@ import java.util.Objects;
 @Entity
 @Slf4j
 @Table(name = "order_line_items")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class OrderLineItems {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @MapsId("orders_id")
+    @Null
     private Long orderId;
 
     @NotNull
@@ -50,6 +52,10 @@ public class OrderLineItems {
     @UpdateTimestamp
     @Column(name="updated_dt")
     private Instant updateDateTime;
+
+    public BigDecimal computeTotalPrice(final BigDecimal price, final int quantity) {
+        return price.multiply(BigDecimal.valueOf(quantity));
+    }
 
     @Override
     public final boolean equals(Object o) {

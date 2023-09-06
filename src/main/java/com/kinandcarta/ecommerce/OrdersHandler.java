@@ -2,19 +2,12 @@ package com.kinandcarta.ecommerce;
 
 import com.kinandcarta.ecommerce.contracts.OrdersUseCases;
 import com.kinandcarta.ecommerce.contracts.ServiceHandler;
-import com.kinandcarta.ecommerce.entities.OrderLineItems;
-import com.kinandcarta.ecommerce.entities.Orders;
-import com.kinandcarta.ecommerce.entities.OrdersAccount;
-import com.kinandcarta.ecommerce.entities.OrdersAddress;
-import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
-import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
-import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
-import com.kinandcarta.ecommerce.exceptions.OrderModelNotPersistedException;
+import com.kinandcarta.ecommerce.entities.*;
+import com.kinandcarta.ecommerce.exceptions.*;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -153,9 +146,15 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
     public Orders findById(final Long id) {
         log.debug("findById: id -> " + id);
         if (!ordersRepository.existsById(id)) {
-            throw new EntityNotFoundException("findById failed for id ->" + id);
+            throw new OrdersNotFoundException("findById failed for id ->" + id);
         }
         return ordersRepository.getReferenceById(id);
+    }
+
+    @Override
+    public AccountOrderDetails findByIdDetailedView(final Long id) {
+        log.debug("findByIdDetailedView: id -> " + id);
+        return new AccountOrderDetails(findById(id));
     }
 
     @Override
@@ -172,6 +171,7 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
         return new HashSet<>(!ordersWithLineItems.getOrderLineItems().isEmpty() ?
                 ordersWithLineItems.getOrderLineItems() : new HashSet<>());
     }
+
 
 
     private static void assertOrderAccountHasEmail(OrdersAccount accountToRetrieveVerify) {

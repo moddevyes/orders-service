@@ -2,6 +2,7 @@ package com.kinandcarta.ecommerce;
 
 import com.kinandcarta.ecommerce.contracts.ControllerOrdersUseCases;
 import com.kinandcarta.ecommerce.contracts.CrudUseCase;
+import com.kinandcarta.ecommerce.entities.AccountOrderDetails;
 import com.kinandcarta.ecommerce.entities.OrderLineItems;
 import com.kinandcarta.ecommerce.entities.Orders;
 import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
@@ -89,6 +90,19 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
     }
 
     @Override
+    @GetMapping(value = "/orders/{id}/details", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AccountOrderDetails> findByIdDetailedView(@PathVariable("id") @NotNull final Long id) {
+        try {
+            if (id == null) return ResponseEntity.badRequest().build();
+
+            return new ResponseEntity<>(ordersHandler.findByIdDetailedView(id), HttpStatus.OK);
+        } catch (final Exception e) {
+            log.error("::METHOD, findById, exception occurred.", e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @Override
     @GetMapping(value = "/orders", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Set<Orders>> findAll() {
         try {
@@ -110,5 +124,6 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
             return ResponseEntity.notFound().build();
         }
     }
+
 
 }

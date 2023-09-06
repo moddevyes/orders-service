@@ -291,7 +291,7 @@ class OrdersHandlerTest {
                 .hasSize(FOUR_ORDERS_TWO_ITEMS_EACH);
     }
 
-    @Test void shouldFindOrderDetailsById_andReturn_CustomDetailsView() {
+    @Test void shouldFindOrderDetailsById_andReturn_CustomDetailsView_NullAddress() {
         AccountOrderDetails accountOrderDetails =
             AccountOrderDetails.builder()
                     .orderId(davidKingMoonMousePad.getId())
@@ -345,5 +345,31 @@ class OrdersHandlerTest {
 
         Set<OrderLineItems> itemsForOrderId = ordersHandler.findOrderLineItemsFor(1L);
         assertThat(itemsForOrderId).isNotNull().hasSize(2);
+    }
+
+    @Test void shouldFindOrderDetailsView_withCustomView() throws Exception {
+        // base state
+        when (ordersRepository.existsById(1L)).thenReturn(Boolean.TRUE);
+        when(ordersRepository.getReferenceById(1L)).thenReturn(davidKingMoonMousePad);
+        AccountOrderDetails accountOrderDetails =
+                AccountOrderDetails.builder()
+                        .lineItems(davidKingMoonMousePad.getOrderLineItems())
+                        .orderId(davidKingMoonMousePad.getId())
+                        .orderNumber(davidKingMoonMousePad.getOrderNumber())
+                        .shippingAddressDTO(
+                                ShippingAddressDTO.builder() // Objects.requiresNotNullWithDefault ...
+                                        .id(davidKingMoonMousePad.getOrdersShippingAddress().getId())
+                                        .address1(davidKingMoonMousePad.getOrdersShippingAddress().getAddress1())
+                                        .address2(davidKingMoonMousePad.getOrdersShippingAddress().getAddress2())
+                                        .city(davidKingMoonMousePad.getOrdersShippingAddress().getCity())
+                                        .postalCode(davidKingMoonMousePad.getOrdersShippingAddress().getPostalCode())
+                                        .province(davidKingMoonMousePad.getOrdersShippingAddress().getProvince())
+                                        .country(davidKingMoonMousePad.getOrdersShippingAddress().getCountry())
+                                        .build()).build();
+
+
+        AccountOrderDetails detailsForOrders = ordersHandler.findByIdDetailedView(1L);
+        assertThat(detailsForOrders).isNotNull();
+        assertThat(detailsForOrders.getLineItems()).hasSize(2);
     }
 }

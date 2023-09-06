@@ -3,10 +3,7 @@ package com.kinandcarta.ecommerce;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.kinandcarta.ecommerce.entities.OrderLineItems;
-import com.kinandcarta.ecommerce.entities.Orders;
-import com.kinandcarta.ecommerce.entities.OrdersAccount;
-import com.kinandcarta.ecommerce.entities.OrdersAddress;
+import com.kinandcarta.ecommerce.entities.*;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
@@ -82,6 +79,25 @@ class OrdersServiceIntegrationTests {
             .productId(1L)
             .build();
 
+    OrderLineItems secondProduct = OrderLineItems.builder()
+            .id(4L)
+            .orderId(1L)
+            .quantity(1)
+            .price(new BigDecimal("10"))
+            .totalPrice(new BigDecimal("10"))
+            .productId(1L)
+            .build();
+
+    OrderLineItems thirdProduct = OrderLineItems.builder()
+            .id(5L)
+            .orderId(1L)
+            .quantity(1)
+            .price(new BigDecimal("13.74"))
+            .totalPrice(new BigDecimal("13.74"))
+            .productId(5L)
+            .build();
+
+
     @BeforeEach
     void setUp() {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -109,6 +125,28 @@ class OrdersServiceIntegrationTests {
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk());
     }
+    @Test
+    void shouldCreateAnOrder_withOrderLineItems() throws Exception {
+        Orders minimumOrder = Orders.builder()
+                .id(1L)
+                .ordersAccount(ordersAccount)
+                .ordersShippingAddress(ordersAddress)
+                .orderNumber(orderNumber)
+                .orderLineItems(Set.of(firstProduct, secondProduct, thirdProduct))
+                .orderDate(Instant.now(Clock.systemUTC())).build();
+
+        final String json = mapper.writeValueAsString(minimumOrder);
+
+        when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/orders")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content((json)))
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
 
     @Test void shouldUpdateAnOrder() throws Exception {
         final String json = mapper.writeValueAsString(
@@ -265,6 +303,71 @@ class OrdersServiceIntegrationTests {
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk());
 
+    }
+
+    @Test void shouldReturnAccountOrderDetails_CustomView() throws Exception {
+        // base state
+        Orders davidKingMoonMousePad = Orders.builder()
+                .id(1L)
+                .ordersAccount(ordersAccount)
+                .ordersShippingAddress(ordersAddress)
+                .orderNumber(orderNumber)
+                .orderDate(Instant.now(Clock.systemUTC()))
+                .orderLineItems(Set.of(firstProduct)).build();
+
+        when (ordersRepository.existsById(1L)).thenReturn(Boolean.TRUE);
+        when(ordersRepository.getReferenceById(1L)).thenReturn(davidKingMoonMousePad);
+
+        AccountOrderDetails accountOrderDetails =
+                AccountOrderDetails.builder()
+                        .lineItems(davidKingMoonMousePad.getOrderLineItems())
+                        .orderId(davidKingMoonMousePad.getId())
+                        .orderNumber(davidKingMoonMousePad.getOrderNumber())
+                        .shippingAddressDTO(
+                                ShippingAddressDTO.builder() // Objects.requiresNotNullWithDefault ...
+                                        .id(davidKingMoonMousePad.getOrdersShippingAddress().getId())
+                                        .address1(davidKingMoonMousePad.getOrdersShippingAddress().getAddress1())
+                                        .address2(davidKingMoonMousePad.getOrdersShippingAddress().getAddress2())
+                                        .city(davidKingMoonMousePad.getOrdersShippingAddress().getCity())
+                                        .postalCode(davidKingMoonMousePad.getOrdersShippingAddress().getPostalCode())
+                                        .province(davidKingMoonMousePad.getOrdersShippingAddress().getProvince())
+                                        .country(davidKingMoonMousePad.getOrdersShippingAddress().getCountry())
+                                        .build()).build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/orders/{id}/details", 1L)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk());
+
+        /*
+        JSON response:
+            {
+                "orderId": 1,
+                "orderNumber": "ord-064311f0-3c59-46df-b304-5bd1b513a59b",
+                "totalPrice": 0,
+                "lineItems": [{
+                    "id": 3,
+                    "orderId": 1,
+                    "productId": 1,
+                    "quantity": 2,
+                    "price": 10,
+                    "totalPrice": 10,
+                    "createDateTime": null,
+                    "updateDateTime": null
+                }],
+                "shippingAddress": {
+                    "id": 100,
+                    "address1": "100",
+                    "address2": "",
+                    "city": "Food Forest City",
+                    "state": null,
+                    "province": "",
+                    "postalCode": "33000",
+                    "country": "US"
+                }
+            }
+         */
     }
 
     private Orders findByIdOrders() {

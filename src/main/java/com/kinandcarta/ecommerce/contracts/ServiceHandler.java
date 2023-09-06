@@ -1,5 +1,6 @@
 package com.kinandcarta.ecommerce.contracts;
 
+import com.kinandcarta.ecommerce.entities.AccountOrderDetails;
 import com.kinandcarta.ecommerce.entities.Orders;
 import com.kinandcarta.ecommerce.exceptions.OrderModelNotPersistedException;
 
@@ -11,6 +12,7 @@ public interface ServiceHandler {
     void delete(final Long id);
     Orders findById(final Long id);
 
+    AccountOrderDetails findByIdDetailedView(final Long id);
     Set<Orders> findAll();
     
 }

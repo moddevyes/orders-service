@@ -1,12 +1,10 @@
 package com.kinandcarta.ecommerce;
 
-import com.kinandcarta.ecommerce.entities.OrderLineItems;
-import com.kinandcarta.ecommerce.entities.Orders;
-import com.kinandcarta.ecommerce.entities.OrdersAccount;
-import com.kinandcarta.ecommerce.entities.OrdersAddress;
+import com.kinandcarta.ecommerce.entities.*;
 import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
+import com.kinandcarta.ecommerce.exceptions.OrdersNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -131,6 +129,7 @@ class OrdersControllerTest {
             .ordersAccount(ordersAccount)
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC()))
+            .ordersShippingAddress(ordersAddress)
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     @Mock
     OrdersHandler ordersHandler;
@@ -234,11 +233,76 @@ class OrdersControllerTest {
         assertThat(findAllOrders()).contains(davidKingMoonMousePad);
     }
 
+    @Test void shouldFindOrders_byId() {
+        assertThat(findSingleOrders_byId(1L)).isNotNull();
+    }
+
     @Test void verifyOrderDetailsView_containsExpectedData() {
         /*
+        :Requirements
 
+        . Get order details for an order.
+            a. URL: /orders/{id}
+
+        i. Order number
+
+        ii. Shipping address
+
+        iii. Total price
+
+        iv. Line items
+            1. Product name
+            2. Quantity
+
+        v. Shipments
+            1. Order Line Items
+            2. Shipped Date
+            3. Delivery Date
          */
+        assertThat(findSingleOrders_DetailsView_byId(1L)).isNotNull();
+
+        /*
+        System.out.printf("ORDER DETAILS VIEW: %s%n",findSingleOrders_DetailsView_byId(1L));
+
+        TEST OUTPUT:
+
+        ORDER DETAILS VIEW: AccountOrderDetails(
+         orderId=1
+         orderNumber=ord-659b989b-f56c-4e14-a279-1fc345569b2c
+         shippingAddressDTO=ShippingAddressDTO(
+                 id=100
+                 address1=100
+                 address2=
+                 city=Food Forest City
+                 state=null
+                 province=
+                 postalCode=33000
+                 country=US)
+         totalPrice=33.99
+         lineItems=[OrderLineItems(
+                 id=3
+                 orderId=1
+                 productId=1
+                 quantity=2
+                 price=10
+                 totalPrice=20
+                 createDateTime=null
+                 updateDateTime=null)
+                 OrderLineItems(id=4
+                 orderId=1
+                 productId=3
+                 quantity=1
+                 price=13.99
+                 totalPrice=13.99
+                 createDateTime=null
+                 updateDateTime=null)]
+         */
+        AccountOrderDetails detailsView = findSingleOrders_DetailsView_byId(1L);
+        assertThat(detailsView).hasFieldOrPropertyWithValue("orderId", 1L)
+                .hasFieldOrPropertyWithValue("totalPrice", new BigDecimal("33.99"));
     }
+
+
 
 
     // - BASE_CASE__create_minimum_order, verifies the minimum fields are present.
@@ -265,6 +329,41 @@ class OrdersControllerTest {
         assertThat(ordersSet.getBody()).isNotNull().hasSize(1);
         return ordersSet.getBody();
     }
+
+    private Orders findSingleOrders_byId(final Long orderId) {
+        // Expecting id of 1L
+        if (!orderId.equals(davidKingMoonMousePad.getId())) throw new OrdersNotFoundException("Order not found.");
+        when(ordersHandler.findById(orderId)).thenReturn(davidKingMoonMousePad);
+        ResponseEntity<Orders> ordersSet = controller.findById(orderId);
+        assertThat(ordersSet).isNotNull();
+        assertThat(ordersSet.getBody()).isNotNull();
+        return ordersSet.getBody();
+    }
+    private AccountOrderDetails findSingleOrders_DetailsView_byId(final Long orderId) {
+        // Expecting id of 1L
+        if (!orderId.equals(davidKingMoonMousePad.getId())) throw new OrdersNotFoundException("Order not found.");
+        when(ordersHandler.findByIdDetailedView(orderId)).thenReturn(AccountOrderDetails.builder()
+                        .lineItems(davidKingMoonMousePad.getOrderLineItems())
+                        .orderId(davidKingMoonMousePad.getId())
+                        .orderNumber(davidKingMoonMousePad.getOrderNumber())
+                        .shippingAddressDTO(
+                                ShippingAddressDTO.builder() // Objects.requiresNotNullWithDefault ...
+                                        .id(davidKingMoonMousePad.getOrdersShippingAddress().getId())
+                                        .address1(davidKingMoonMousePad.getOrdersShippingAddress().getAddress1())
+                                        .address2(davidKingMoonMousePad.getOrdersShippingAddress().getAddress2())
+                                        .city(davidKingMoonMousePad.getOrdersShippingAddress().getCity())
+                                        .postalCode(davidKingMoonMousePad.getOrdersShippingAddress().getPostalCode())
+                                        .province(davidKingMoonMousePad.getOrdersShippingAddress().getProvince())
+                                        .country(davidKingMoonMousePad.getOrdersShippingAddress().getCountry())
+                                        .build())
+                        .totalPrice(davidKingMoonMousePad.sumLineItems(davidKingMoonMousePad.getOrderLineItems()))
+                .build());
+        ResponseEntity<AccountOrderDetails> ordersSet = controller.findByIdDetailedView(orderId);
+        assertThat(ordersSet).isNotNull();
+        assertThat(ordersSet.getBody()).isNotNull();
+        return ordersSet.getBody();
+    }
+
 
     private void verifyOrderNotCreated_whenAccount_orAccountId_IsNull(final Orders invalidOrderCreateCommand) {
         when(ordersHandler.create(invalidOrderCreateCommand)).thenThrow(MissingAccountException.class);

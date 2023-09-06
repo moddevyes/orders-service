@@ -10,6 +10,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
     database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: none
   jackson:
     serialization:
       fail-on-empty-beans: false
@@ -21,7 +23,19 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
   instance:
     statusPageUrl: https://${eureka.hostname}/info
     healthCheckUrl: https://${eureka.hostname}/health
     homePageUrl: https://${eureka.hostname}/
+    appname: orders-service
+
+commerce:
+  registry:
+    user: eurekausr
+    passwd: eurekapasswd
+  clients:
+    accounts:
+      serviceName: accounts-service
+
+      findbyIdUrl: /accounts/{id}

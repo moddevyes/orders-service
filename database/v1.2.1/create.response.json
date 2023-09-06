@@ -1,0 +1,45 @@
+{
+  "id": 2,
+  "ordersAccount": {
+    "id": 1,
+    "firstName": "DukeFirstName",
+    "lastName": "DukeLastName",
+    "emailAddress": "dukefirst.last@enjoy.com",
+    "addresses": [
+      {
+        "id": 1,
+        "address1": "100",
+        "address2": "",
+        "city": "Food Forest City",
+        "state": "FL",
+        "province": "",
+        "postalCode": "33000",
+        "country": "US",
+        "createDateTime": "2023-09-05T20:42:29.188565Z",
+        "updateDateTime": "2023-09-05T20:42:29.188565Z",
+        "shippingAddress": false
+      }
+    ],
+    "createDateTime": "2023-09-05T20:42:29.167802Z",
+    "updateDateTime": "2023-09-05T20:42:29.167802Z"
+  },
+  "orderNumber": "ord-82bc957f-3684-4b31-b9a7-5a79f491db32",
+  "orderDate": "2023-09-05T17:22:57.940717900Z",
+  "ordersShippingAddress": {
+    "id": 2,
+    "address1": "100 Iterations Road",
+    "address2": "Suite 100",
+    "city": "Food Forest City",
+    "state": "FL",
+    "province": "Iterations Province",
+    "postalCode": "33000",
+    "country": "US",
+    "createDateTime": "2023-09-05T20:42:29.191571Z",
+    "updateDateTime": "2023-09-05T20:42:29.191571Z",
+    "shippingAddress": false
+  },
+  "orderLineItems": null,
+  "totalPrice": null,
+  "createDateTime": "2023-09-05T20:42:29.195570Z",
+  "updateDateTime": "2023-09-05T20:42:29.195570Z"
+}

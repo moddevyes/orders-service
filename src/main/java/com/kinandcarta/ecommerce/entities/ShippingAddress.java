@@ -1,4 +1,4 @@
-package com.kinandcarta.ecommerce;
+package com.kinandcarta.ecommerce.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;

@@ -1,5 +1,13 @@
 package com.kinandcarta.ecommerce;
 
+import com.kinandcarta.ecommerce.entities.*;
+import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
+import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
+import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
+import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
+import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,12 +18,10 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.when;
 
@@ -27,7 +33,9 @@ class OrdersHandlerTest {
     TestEntityManager entityManager = Mockito.mock(TestEntityManager.class);
 
     OrdersRepository ordersRepository = Mockito.mock(OrdersRepository.class);
-    OrderLineItemsRepository orderLineItemsRepository = Mockito.mock(OrderLineItemsRepository.class);
+    OrdersLineItemsRepository ordersLineItemsRepository = Mockito.mock(OrdersLineItemsRepository.class);
+    OrdersAccountRepository ordersAccountRepository = Mockito.mock(OrdersAccountRepository.class);
+    OrdersAddressRepository ordersAddressRepository = Mockito.mock(OrdersAddressRepository.class);
     OrdersHandler ordersHandler;
 
     final String orderNumber = "ord-" + UUID.randomUUID();
@@ -48,6 +56,68 @@ class OrdersHandlerTest {
             .addresses(
                     Set.of(ordersAddress)).build();
 
+    OrdersAccount ordersAccountNullAccountAddress = OrdersAccount.builder()
+            .id(100L)
+            .firstName("DukeFirstName")
+            .lastName("DukeLastName")
+            .emailAddress("dukefirst.last@enjoy.com")
+            .addresses(null).build();
+    OrdersAccount ordersAccountEmailNull = OrdersAccount.builder()
+            .id(13L)
+            .firstName("DukeFirstName")
+            .lastName("DukeLastName")
+            .emailAddress(null)
+            .addresses(
+                    Set.of(ordersAddress)).build();
+    OrdersAccount ordersAccountFirstLastNull = OrdersAccount.builder()
+            .id(1L)
+            .firstName(null)
+            .lastName(null)
+            .emailAddress("dukefirst.last@enjoy.com")
+            .addresses(
+                    Set.of(ordersAddress)).build();
+
+    Orders minimumOrderNullAccount = Orders.builder()
+            .id(1L)
+            .ordersAccount(null)
+            .ordersShippingAddress(ordersAddress)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+
+    Orders minimumOrderNullAccountAccount = Orders.builder()
+            .id(1L)
+            .ordersAccount(ordersAccountNullAccountAddress)
+            .ordersShippingAddress(ordersAddress)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+
+    Orders minimumOrderNullShippingAddress = Orders.builder()
+            .id(12L)
+            .ordersAccount(ordersAccount)
+            .ordersShippingAddress(null)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+
+    Orders minimumOrderNullEmailAddress = Orders.builder()
+            .id(1L)
+            .ordersAccount(ordersAccountEmailNull)
+            .ordersShippingAddress(ordersAddress)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+    Orders minimumOrder = Orders.builder()
+            .id(1L)
+            .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
+            .orderNumber(orderNumber)
+            .orderLineItems(new HashSet<>())
+            .orderDate(Instant.now(Clock.systemUTC())).build();
+
+    Orders minimumOrderAccountFirstLastNull = Orders.builder()
+            .id(1L)
+            .ordersAccount(ordersAccountFirstLastNull)
+            .ordersShippingAddress(ordersAddress)
+            .orderNumber(orderNumber)
+            .orderDate(Instant.now(Clock.systemUTC())).build();
     OrderLineItems firstProduct = OrderLineItems.builder()
             .id(3L)
             .orderId(1L)
@@ -66,30 +136,38 @@ class OrdersHandlerTest {
     Orders davidKingMoonMousePad = Orders.builder()
             .id(1L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber)
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     Orders davidKingMoonMousePad_Order2 = Orders.builder()
             .id(2L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber+"000")
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     Orders davidKingMoonMousePad_Order3 = Orders.builder()
             .id(3L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber+"333")
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     Orders davidKingMoonMousePad_Order4 = Orders.builder()
             .id(4L)
             .ordersAccount(ordersAccount)
+            .ordersShippingAddress(ordersAddress)
             .orderNumber(orderNumber+"444")
             .orderDate(Instant.now(Clock.systemUTC()))
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
 
     @BeforeEach void setUp() {
-        ordersHandler = new OrdersHandler(ordersRepository, orderLineItemsRepository);
+        ordersHandler = new OrdersHandler(ordersRepository, ordersLineItemsRepository,
+                ordersAccountRepository, ordersAddressRepository);
+
+        // Orders
+        entityManager.persist(minimumOrder);
         entityManager.persist(davidKingMoonMousePad);
         entityManager.persist(davidKingMoonMousePad_Order2);
         entityManager.persist(davidKingMoonMousePad_Order3);
@@ -100,8 +178,72 @@ class OrdersHandlerTest {
         entityManager.flush();
     }
 
+
     @Test
-    void shouldCreate_find_and_UpdateOrder() {
+    // Null First and Last Name -> Invalid Account Exception
+    void shouldFail_toCreateNewOrder_whenAccount_FirstAndLastName_isNull() {
+        when(ordersRepository.save(minimumOrderAccountFirstLastNull)).thenThrow(InvalidAccountException.class);
+        assertThatThrownBy(() ->
+            ordersHandler.create(minimumOrderAccountFirstLastNull)).isInstanceOf(InvalidAccountException.class)
+                .hasStackTraceContaining("com.kinandcarta.ecommerce.exceptions.InvalidAccountException");
+    }
+
+    @Test
+    void shouldFail_toCreateNewOrder_whenShippingAddress_isNull() {
+        when(ordersRepository.save(minimumOrderNullShippingAddress)).thenThrow(MissingAddressException.class);
+        assertThatThrownBy(() ->
+                ordersHandler.create(minimumOrderNullShippingAddress)).isInstanceOf(MissingAddressException.class);
+    }
+
+    @Test
+    // Null Account -> Missing Account Exception
+    void shouldFail_toCreateNewOrder_whenAccount_isNull() {
+        when(ordersRepository.save(minimumOrderNullAccount)).thenThrow(MissingAccountException.class);
+        assertThatThrownBy(() ->
+            ordersHandler.create(minimumOrderNullAccount)).isInstanceOf(MissingAccountException.class)
+                .hasStackTraceContaining("com.kinandcarta.ecommerce.exceptions.MissingAccountException");
+    }
+
+    @Test
+    // Null Email Address -> Invalid Account Exception
+    void shouldFail_toCreateNewOrder_whenEmailAddress_isNull() {
+        when(ordersRepository.save(minimumOrderNullEmailAddress)).thenThrow(InvalidAccountException.class);
+        assertThatThrownBy(() ->
+                ordersHandler.create(minimumOrderNullEmailAddress)).isInstanceOf(InvalidAccountException.class)
+                .hasStackTraceContaining("com.kinandcarta.ecommerce.exceptions.InvalidAccountException");
+    }
+
+    @Test
+    // Null Address -> Missing Address Exception
+    void shouldFail_toCreateNewOrder_whenAccountAddress_isNull() {
+        when(ordersRepository.save(minimumOrderNullAccountAccount)).thenThrow(MissingAddressException.class);
+        assertThatThrownBy(() ->
+            ordersHandler.create(minimumOrderNullAccountAccount)).isInstanceOf(MissingAddressException.class);
+    }
+
+    @Test
+    void shouldCreateNewOrder_withMinimumFields() {
+
+        minimumOrder.setOrderLineItems(new HashSet<>());
+        minimumOrder.getOrderLineItems().add(firstProduct);
+
+        // create
+        // Save orders account
+        when(ordersAccountRepository.save(ordersAccount)).thenReturn(ordersAccount);
+        // Save orders address
+        when(ordersAddressRepository.save(ordersAddress)).thenReturn(ordersAddress);
+
+        when(ordersRepository.save(minimumOrder)).thenReturn(minimumOrder);
+
+        Orders createOrderCommand = ordersHandler.create(minimumOrder);
+
+        assertThat(createOrderCommand).isNotNull();
+        assertThat(createOrderCommand.getId()).isEqualTo(1L);
+        assertThat(createOrderCommand.getOrderNumber()).isEqualTo(orderNumber);
+    }
+
+    @Test
+    void should_UpdateOrder() {
         // create
         when(ordersRepository.save(davidKingMoonMousePad_Order2)).thenReturn(davidKingMoonMousePad_Order2);
         // exists
@@ -149,7 +291,7 @@ class OrdersHandlerTest {
                 .hasSize(FOUR_ORDERS_TWO_ITEMS_EACH);
     }
 
-    @Test void shouldFindOrderDetailsById_andReturn_CustomDetailsView() {
+    @Test void shouldFindOrderDetailsById_andReturn_CustomDetailsView_NullAddress() {
         AccountOrderDetails accountOrderDetails =
             AccountOrderDetails.builder()
                     .orderId(davidKingMoonMousePad.getId())
@@ -172,4 +314,62 @@ class OrdersHandlerTest {
 
     }
 
+    @Test void shouldFindAllOrdersFor_OrderId() {
+        Orders toFind = Orders.builder()
+                .id(1L)
+                .ordersAccount(ordersAccount)
+                .orderNumber(orderNumber)
+                .orderLineItems(
+                        Set.of(
+                                OrderLineItems.builder()
+                                        .orderId(1L)
+                                        .quantity(2)
+                                        .price(new BigDecimal("10"))
+                                        .productId(1L)
+                                        .build(),
+                                OrderLineItems.builder()
+                                        .orderId(1L)
+                                        .quantity(1)
+                                        .price(new BigDecimal("13.99"))
+                                        .productId(3L)
+                                        .build()
+                        )
+                )
+                .orderDate(Instant.now()).build();
+
+        toFind.sumLineItems(toFind.getOrderLineItems());
+
+        when(ordersRepository.save(toFind)).thenReturn(toFind);
+        when (ordersRepository.existsById(1L)).thenReturn(Boolean.TRUE);
+        when(ordersRepository.getReferenceById(1L)).thenReturn(toFind);
+
+        Set<OrderLineItems> itemsForOrderId = ordersHandler.findOrderLineItemsFor(1L);
+        assertThat(itemsForOrderId).isNotNull().hasSize(2);
+    }
+
+    @Test void shouldFindOrderDetailsView_withCustomView() throws Exception {
+        // base state
+        when (ordersRepository.existsById(1L)).thenReturn(Boolean.TRUE);
+        when(ordersRepository.getReferenceById(1L)).thenReturn(davidKingMoonMousePad);
+        AccountOrderDetails accountOrderDetails =
+                AccountOrderDetails.builder()
+                        .lineItems(davidKingMoonMousePad.getOrderLineItems())
+                        .orderId(davidKingMoonMousePad.getId())
+                        .orderNumber(davidKingMoonMousePad.getOrderNumber())
+                        .shippingAddressDTO(
+                                ShippingAddressDTO.builder() // Objects.requiresNotNullWithDefault ...
+                                        .id(davidKingMoonMousePad.getOrdersShippingAddress().getId())
+                                        .address1(davidKingMoonMousePad.getOrdersShippingAddress().getAddress1())
+                                        .address2(davidKingMoonMousePad.getOrdersShippingAddress().getAddress2())
+                                        .city(davidKingMoonMousePad.getOrdersShippingAddress().getCity())
+                                        .postalCode(davidKingMoonMousePad.getOrdersShippingAddress().getPostalCode())
+                                        .province(davidKingMoonMousePad.getOrdersShippingAddress().getProvince())
+                                        .country(davidKingMoonMousePad.getOrdersShippingAddress().getCountry())
+                                        .build()).build();
+
+
+        AccountOrderDetails detailsForOrders = ordersHandler.findByIdDetailedView(1L);
+        assertThat(detailsForOrders).isNotNull();
+        assertThat(detailsForOrders.getLineItems()).hasSize(2);
+    }
 }

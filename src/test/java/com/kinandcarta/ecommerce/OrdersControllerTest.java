@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
@@ -303,6 +305,13 @@ class OrdersControllerTest {
     }
 
 
+    @Test
+    void shouldReturnBadRequest_whenDataIntegrityViolationException_Occurs() {
+        when(ordersHandler.create(minimumOrder)).thenThrow(DataIntegrityViolationException.class);
+        ResponseEntity<Orders> orderNotCreated = controller.create(minimumOrder);
+        assertThat(orderNotCreated).isNotNull();
+        assertThat(orderNotCreated.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(400));
+    }
 
 
     // - BASE_CASE__create_minimum_order, verifies the minimum fields are present.

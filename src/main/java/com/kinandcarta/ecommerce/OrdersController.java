@@ -11,6 +11,7 @@ import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
 import com.kinandcarta.ecommerce.exceptions.OrderModelNotPersistedException;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +43,8 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
             if (e instanceof InvalidAccountException ||
                     e instanceof MissingAccountException ||
                     e instanceof MissingAddressException ||
-                    e instanceof OrderModelNotPersistedException)
+                    e instanceof OrderModelNotPersistedException ||
+                    e instanceof DataIntegrityViolationException)
             { return ResponseEntity.badRequest().build(); }
 
             return ResponseEntity.notFound().build();

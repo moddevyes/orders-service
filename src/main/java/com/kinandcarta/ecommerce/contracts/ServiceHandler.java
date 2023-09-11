@@ -14,5 +14,5 @@ public interface ServiceHandler {
 
     AccountOrderDetails findByIdDetailedView(final Long id);
     Set<Orders> findAll();
-    
+    Set<Orders> findOrdersForAccountId(final Long accountId);
 }

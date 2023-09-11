@@ -3,8 +3,6 @@ package com.kinandcarta.ecommerce.contracts;
 import com.kinandcarta.ecommerce.entities.AccountOrderDetails;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Set;
-
 public interface CrudUseCase <T> {
 
     ResponseEntity<T> create(final T model);
@@ -13,7 +11,5 @@ public interface CrudUseCase <T> {
     ResponseEntity<T> findById(final Long id);
 
     ResponseEntity<AccountOrderDetails> findByIdDetailedView(final Long id);
-
-    ResponseEntity<Set<T>> findAll();
 
 }

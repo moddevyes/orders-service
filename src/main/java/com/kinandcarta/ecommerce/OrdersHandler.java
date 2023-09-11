@@ -164,6 +164,11 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
     }
 
     @Override
+    public Set<Orders> findOrdersForAccountId(Long accountId) {
+        return new HashSet<>(ordersRepository.findAllByOrdersAccountIdOrderByOrderDateDesc(accountId));
+    }
+
+    @Override
     public Set<OrderLineItems> findOrderLineItemsFor(Long orderId) {
         Orders ordersWithLineItems = findById(orderId);
         Objects.requireNonNull(ordersWithLineItems, "Order was null for METHOD: findOrderLineItemsFor");
@@ -171,6 +176,7 @@ public class OrdersHandler implements ServiceHandler, OrdersUseCases {
         return new HashSet<>(!ordersWithLineItems.getOrderLineItems().isEmpty() ?
                 ordersWithLineItems.getOrderLineItems() : new HashSet<>());
     }
+
 
 
 

@@ -106,10 +106,15 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
 
     @Override
     @GetMapping(value = "/orders", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Set<Orders>> findAll() {
+    public ResponseEntity<Set<Orders>> findAll(
+            @RequestParam(value = "accountId", required = false) @NotNull final Long accountId) {
         try {
-            return new ResponseEntity<>(
-                    Optional.ofNullable(ordersHandler.findAll()).orElse(new HashSet<>()), HttpStatus.OK);
+            if (accountId == null) {
+                return new ResponseEntity<>(
+                        Optional.ofNullable(ordersHandler.findAll()).orElse(new HashSet<>()), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(ordersHandler.findOrdersForAccountId(accountId), HttpStatus.OK);
+            }
         } catch (final Exception e) {
             log.error("::METHOD, findAll, exception occurred.", e);
             return ResponseEntity.notFound().build();
@@ -126,6 +131,5 @@ public class OrdersController implements CrudUseCase<Orders>, ControllerOrdersUs
             return ResponseEntity.notFound().build();
         }
     }
-
 
 }

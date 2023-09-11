@@ -239,6 +239,13 @@ class OrdersControllerTest {
         assertThat(findSingleOrders_byId(1L)).isNotNull();
     }
 
+    @Test void shouldFindAllOrders_byAccountId() {
+        when(ordersHandler.findOrdersForAccountId(100L)).thenReturn(Set.of(davidKingMoonMousePad));
+        ResponseEntity<Set<Orders>> ordersForAccount100 = controller.findAll(100L);
+        assertThat(ordersForAccount100).isNotNull();
+        assertThat(ordersForAccount100.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(200));
+        assertThat(ordersForAccount100.getBody()).isNotNull();
+    }
     @Test void verifyOrderDetailsView_containsExpectedData() {
         /*
         :Requirements
@@ -333,7 +340,7 @@ class OrdersControllerTest {
 
     private Set<Orders> findAllOrders() {
         when(ordersHandler.findAll()).thenReturn(Set.of(davidKingMoonMousePad));
-        ResponseEntity<Set<Orders>> ordersSet = controller.findAll();
+        ResponseEntity<Set<Orders>> ordersSet = controller.findAll(null);
         assertThat(ordersSet).isNotNull();
         assertThat(ordersSet.getBody()).isNotNull().hasSize(1);
         return ordersSet.getBody();

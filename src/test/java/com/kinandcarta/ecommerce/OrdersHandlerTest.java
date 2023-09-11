@@ -167,6 +167,8 @@ class OrdersHandlerTest {
                 ordersAccountRepository, ordersAddressRepository);
 
         // Orders
+        entityManager.persist(ordersAddress);
+        entityManager.persist(ordersAccount);
         entityManager.persist(minimumOrder);
         entityManager.persist(davidKingMoonMousePad);
         entityManager.persist(davidKingMoonMousePad_Order2);
@@ -289,6 +291,15 @@ class OrdersHandlerTest {
         Set<Orders> findingAll = ordersHandler.findAll();
         assertThat(findingAll).isNotNull()
                 .hasSize(FOUR_ORDERS_TWO_ITEMS_EACH);
+    }
+
+    @Test
+    void shouldFindAllOrders_byAccountId_orderedByDate() {
+        // save the graph and its dependencies using entity manager first for tests, JPA does this automatically.
+        when(ordersRepository.save(davidKingMoonMousePad)).thenReturn(davidKingMoonMousePad);
+        when(ordersRepository.findAllByOrdersAccountIdOrderByOrderDateDesc(100L)).thenReturn(List.of(davidKingMoonMousePad));
+        Set<Orders> findAllByAccountId = ordersHandler.findOrdersForAccountId(100L);
+        assertThat(findAllByAccountId).isNotNull().hasSize(1);
     }
 
     @Test void shouldFindOrderDetailsById_andReturn_CustomDetailsView_NullAddress() {

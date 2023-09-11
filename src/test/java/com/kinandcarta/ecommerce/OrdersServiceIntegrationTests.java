@@ -11,7 +11,9 @@ import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -41,6 +43,8 @@ class OrdersServiceIntegrationTests {
 
     @MockBean
     OrdersRepository ordersRepository;
+
+    TestEntityManager entityManager = Mockito.mock(TestEntityManager.class);
 
     @MockBean
     OrdersLineItemsRepository ordersLineItemsRepository;
@@ -368,6 +372,105 @@ class OrdersServiceIntegrationTests {
                 }
             }
          */
+    }
+
+    @Test
+    void shouldFindAllOrders_byAccountId_orderedByDate() throws Exception {
+        /*
+        HTTP response
+     Content type = application / json
+     Body = [{
+     	"id": 1,
+     	"ordersAccount": {
+     		"id": 100,
+     		"firstName": "DukeFirstName",
+     		"lastName": "DukeLastName",
+     		"emailAddress": "dukefirst.last@enjoy.com",
+     		"addresses": [{
+     			"id": 100,
+     			"address1": "100",
+     			"address2": "",
+     			"city": "Food Forest City",
+     			"state": "FL",
+     			"province": "",
+     			"postalCode": "33000",
+     			"country": "US",
+     			"createDateTime": null,
+     			"updateDateTime": null,
+     			"shippingAddress": false
+     		}],
+     		"createDateTime": null,
+     		"updateDateTime": null
+     	},
+     	"orderNumber": "ord-950738f3-2c60-46f7-baff-6d6495f454f4",
+     	"orderDate": "2023-09-11T17:17:32.920280700Z",
+     	"ordersShippingAddress": null,
+     	"totalPrice": 33.99,
+     	"createDateTime": null,
+     	"updateDateTime": null,
+     	"orderLineItems": [{
+     		"id": null,
+     		"orderId": 1,
+     		"productId": 1,
+     		"quantity": 2,
+     		"price": 10,
+     		"totalPrice": 20,
+     		"createDateTime": null,
+     		"updateDateTime": null
+     	}, {
+     		"id": null,
+     		"orderId": 1,
+     		"productId": 3,
+     		"quantity": 1,
+     		"price": 13.99,
+     		"totalPrice": 13.99,
+     		"createDateTime": null,
+     		"updateDateTime": null
+     	}]
+     }]
+
+         */
+        Orders toFind = Orders.builder()
+                .id(1L)
+                .ordersAccount(ordersAccount)
+                .orderNumber(orderNumber)
+                .orderLineItems(
+                        Set.of(
+                                OrderLineItems.builder()
+                                        .orderId(1L)
+                                        .quantity(2)
+                                        .price(new BigDecimal("10"))
+                                        .productId(1L)
+                                        .build(),
+                                OrderLineItems.builder()
+                                        .orderId(1L)
+                                        .quantity(1)
+                                        .price(new BigDecimal("13.99"))
+                                        .productId(3L)
+                                        .build()
+                        )
+                )
+                .orderDate(Instant.now()).build();
+
+        toFind.sumLineItems(toFind.getOrderLineItems());
+        entityManager.persist(ordersAccount);
+        entityManager.persist(ordersAddress);
+        entityManager.persist(toFind);
+
+        when(ordersRepository.save(toFind)).thenReturn(toFind);
+        when(ordersRepository.findAllByOrdersAccountIdOrderByOrderDateDesc(100L)).thenReturn(List.of(toFind));
+        mockMvc.perform(MockMvcRequestBuilders.get("/orders").param("accountId", "100")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[*].id").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[*].ordersAccount").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[*].orderNumber").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[*].orderDate").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[*].totalPrice").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[*].orderDate").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[*].orderLineItems").exists());
     }
 
     private Orders findByIdOrders() {

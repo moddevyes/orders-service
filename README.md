@@ -15,7 +15,7 @@ CREATE:
 - assign current date for order date
 - assign shipping address to address from account
 - allow 0 or more order line items (Think Empty Shopping Cart)
-- compute line item total price and assign total price for each item and total price for order
+- compute line item total price and assign total price (to populate) each item with quantity, price and total price for order
 
 UPDATE:
 

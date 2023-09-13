@@ -8,7 +8,7 @@ ENTRYPOINT ["java","-jar","orders-service-0.0.1.jar"]
 
 
 # BUILD
-# docker build -t orders-service .
+# docker build -t orders-service:latest .
 
 # IMAGE built and in docker
 

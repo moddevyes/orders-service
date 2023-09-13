@@ -1,7 +1,6 @@
 package com.kinandcarta.ecommerce;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -74,7 +73,7 @@ class OrdersAccountServiceClientTest {
         mapper.registerModule(new JavaTimeModule());
         mockWebServer = new MockWebServer();
 
-        accountServiceClient = new AccountServiceClient("http://localhost:8001", path);
+        accountServiceClient = new AccountServiceClient("http://localhost:9999", path);
     }
 
     @AfterEach void tearDown() throws Exception {
@@ -97,7 +96,7 @@ class OrdersAccountServiceClientTest {
         };
 
         mockWebServer.setDispatcher(dispatcherMock);
-        mockWebServer.start(8001);
+        mockWebServer.start(9999);
 
         assertThatThrownBy(() ->
             accountServiceClient.findByAccountIdRef(expectedId)).hasStackTraceContaining("404 NOT_FOUND");
@@ -118,7 +117,7 @@ class OrdersAccountServiceClientTest {
         };
 
         mockWebServer.setDispatcher(dispatcherMock);
-        mockWebServer.start(8001);
+        mockWebServer.start(9999);
 
         OrdersAccount accountFound = accountServiceClient.findByAccountIdRef(expectedId);
         assertThat(accountFound.getAccountRefId()).isEqualTo(expectedId);

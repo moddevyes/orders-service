@@ -2,19 +2,23 @@ package com.kinandcarta.ecommerce.clients;
 
 import com.kinandcarta.ecommerce.entities.OrdersAccount;
 import com.kinandcarta.ecommerce.exceptions.AccountNotFoundException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 import java.util.Optional;
 
+@Component
 public class AccountServiceClient {
     String baseURL;
     String getAccountIdUri;
     WebClient client;
 
 
-    public AccountServiceClient(final String baseURL, final String getAccountIdUri) {
+    public AccountServiceClient(@Value("${commerce.clients.accounts.baseUrl}") final String baseURL,
+                                @Value("${commerce.clients.accounts.findByAccountIdRefUrl}") final String getAccountIdUri) {
         this.client = WebClient.builder().baseUrl(baseURL).build();
         this.baseURL = baseURL;
         this.getAccountIdUri = getAccountIdUri;
@@ -24,7 +28,7 @@ public class AccountServiceClient {
         Objects.requireNonNull(id, "Account Id REF required to find account using client.");
 
         Mono<OrdersAccount> accountFound =
-                client.get().uri(this.getAccountIdUri + id)
+                client.get().uri(this.getAccountIdUri, id)
                     .retrieve()
                     .bodyToMono(OrdersAccount.class);
 

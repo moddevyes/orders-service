@@ -1,24 +1,40 @@
 package com.kinandcarta.ecommerce;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.kinandcarta.ecommerce.clients.AccountServiceClient;
 import com.kinandcarta.ecommerce.entities.*;
 import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
 import com.kinandcarta.ecommerce.exceptions.OrdersNotFoundException;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -59,6 +75,7 @@ class OrdersControllerTest {
 
     OrdersAccount ordersAccount = OrdersAccount.builder()
             .id(100L)
+            .accountRefId("12345")
             .firstName("DukeFirstName")
             .lastName("DukeLastName")
             .emailAddress("dukefirst.last@enjoy.com")
@@ -81,6 +98,7 @@ class OrdersControllerTest {
 
     OrdersAccount ordersAccountEmailNull = OrdersAccount.builder()
             .id(13L)
+            .accountRefId("12345")
             .firstName("DukeFirstName")
             .lastName("DukeLastName")
             .emailAddress(null)
@@ -88,6 +106,7 @@ class OrdersControllerTest {
                     Set.of(ordersAddress)).build();
     OrdersAccount ordersAccountFirstLastNull = OrdersAccount.builder()
             .id(1L)
+            .accountRefId("12345")
             .firstName(null)
             .lastName(null)
             .emailAddress("dukefirst.last@enjoy.com")
@@ -135,17 +154,43 @@ class OrdersControllerTest {
             .orderLineItems(Set.of(firstProduct, secondProduct)).build();
     @Mock
     OrdersHandler ordersHandler;
+    @Mock
+    AccountServiceClient accountServiceClient;
+    final String expectedAccountIdRef = "4f464483-a1f0-4ce9-a19e-3c0f23e84a67";
+    final String path = "/accounts/" + expectedAccountIdRef;
+
+    @Value("${commerce.clients.accounts.baseUrl}")
+    String baseURL;
+
+    @Value("${commerce.clients.accounts.findByAccountIdRefUrl}")
+    String getAccountIdUri;
+    static MockWebServer mockWebServer;
+    ObjectMapper mapper;
 
     OrdersController controller;
 
 
     @BeforeEach
-    void setUp() {
-        controller = new OrdersController(ordersHandler);
+    void setUp() throws Exception {
+        mapper = new ObjectMapper();
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.registerModule(new JavaTimeModule());
+
+        initializeMockServer_HappyPath();
+
+        controller = new OrdersController(ordersHandler, accountServiceClient);
+    }
+
+
+    @AfterEach
+    void tearDown() throws Exception {
+        mockWebServer.shutdown();
     }
 
     @Test void initClassUnderTest() {
         assertThat(controller).isNotNull();
+        assertThat(ordersHandler).isNotNull();
+        assertThat(accountServiceClient).isNotNull();
     }
     @Test
     void createOrder_withMinimumFields() {
@@ -164,13 +209,13 @@ class OrdersControllerTest {
     }
 
     @Test
-    void createOrderFails_forMissingAccount() {
+    void createOrderFails_forMissingAccount() throws Exception {
+        mockServerFor_FailingUseCase(HttpStatus.BAD_REQUEST.value());
+
         // Null Account
-        verifyOrderNotCreated_whenAccount_orAccountId_IsNull(minimumOrderNullAccount);
         ResponseEntity<Orders> orderCreated = controller.create(minimumOrderNullAccount);
         assertThat(orderCreated).isEqualTo(ResponseEntity.badRequest().build());
     }
-
     @Test
     void createOrderFails_whenAccountIsMissing_Address() {
         verifyOrderNotCreated_whenAccount_orAccount_Address_IsNull(minimumOrderNullAddress);
@@ -318,6 +363,40 @@ class OrdersControllerTest {
         ResponseEntity<Orders> orderNotCreated = controller.create(minimumOrder);
         assertThat(orderNotCreated).isNotNull();
         assertThat(orderNotCreated.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(400));
+    }
+
+    // HELPER METHODS
+    private void initializeMockServer_HappyPath() throws IOException {
+        mockWebServer = new MockWebServer();
+        accountServiceClient = new AccountServiceClient("http://localhost:9999", path);
+
+        Dispatcher dispatcherMock = new Dispatcher() {
+            @SneakyThrows
+            @NotNull
+            @Override
+            public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) {
+                Objects.requireNonNull(recordedRequest, "Request was null for MockServer");
+                return new MockResponse().setResponseCode(200)
+                        .setHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                        .setBody(mapper.writeValueAsString(ordersAccount));
+            }
+        };
+
+        mockWebServer.setDispatcher(dispatcherMock);
+        mockWebServer.start(9999);
+    }
+    private static void mockServerFor_FailingUseCase(final int intStatusCode) throws IOException {
+        Dispatcher dispatcherMock = new Dispatcher() {
+            @NotNull
+            @Override
+            public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) throws InterruptedException {
+                Objects.requireNonNull(recordedRequest, "Request was null for MockServer");
+                return new MockResponse().setResponseCode(intStatusCode);
+            }
+        };
+
+        mockWebServer.setDispatcher(dispatcherMock);
+        mockWebServer.start(9999);
     }
 
 

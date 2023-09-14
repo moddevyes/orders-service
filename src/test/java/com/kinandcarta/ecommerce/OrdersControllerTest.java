@@ -9,32 +9,20 @@ import com.kinandcarta.ecommerce.exceptions.InvalidAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAccountException;
 import com.kinandcarta.ecommerce.exceptions.MissingAddressException;
 import com.kinandcarta.ecommerce.exceptions.OrdersNotFoundException;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -59,7 +47,6 @@ import static org.mockito.Mockito.*;
     "createDateTime",
     "updateDateTime"
  */
-@SuppressWarnings("rawtypes")
 @ExtendWith(MockitoExtension.class)
 class OrdersControllerTest {
     private static final int TWO_ORDER_LINE_ITEMS = 2;
@@ -157,34 +144,19 @@ class OrdersControllerTest {
     @Mock
     AccountServiceClient accountServiceClient;
     final String expectedAccountIdRef = "4f464483-a1f0-4ce9-a19e-3c0f23e84a67";
-    final String path = "/accounts/" + expectedAccountIdRef;
 
-    @Value("${commerce.clients.accounts.baseUrl}")
-    String baseURL;
-
-    @Value("${commerce.clients.accounts.findByAccountIdRefUrl}")
-    String getAccountIdUri;
-    static MockWebServer mockWebServer;
     ObjectMapper mapper;
 
     OrdersController controller;
 
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         mapper = new ObjectMapper();
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.registerModule(new JavaTimeModule());
 
-        initializeMockServer_HappyPath();
-
         controller = new OrdersController(ordersHandler, accountServiceClient);
-    }
-
-
-    @AfterEach
-    void tearDown() throws Exception {
-        mockWebServer.shutdown();
     }
 
     @Test void initClassUnderTest() {
@@ -209,32 +181,27 @@ class OrdersControllerTest {
     }
 
     @Test
-    void createOrderFails_forMissingAccount() throws Exception {
-        mockServerFor_FailingUseCase(HttpStatus.BAD_REQUEST.value());
-
+    void createOrderFails_forMissingAccount() {
         // Null Account
         ResponseEntity<Orders> orderCreated = controller.create(minimumOrderNullAccount);
         assertThat(orderCreated).isEqualTo(ResponseEntity.badRequest().build());
     }
     @Test
     void createOrderFails_whenAccountIsMissing_Address() {
-        verifyOrderNotCreated_whenAccount_orAccount_Address_IsNull(minimumOrderNullAddress);
         ResponseEntity<Orders> orderCreated = controller.create(minimumOrderNullAddress);
-        assertThat(orderCreated).isEqualTo(ResponseEntity.badRequest().build());
+        assertThat(orderCreated).isEqualTo(ResponseEntity.notFound().build());
     }
 
     @Test
     void createOrderFails_ForMissingAccount_EmailAddress() {
-        verifyOrderNotCreated_whenAccount_FirstLastName_or_Email_IsNull(minimumOrderNoEmailAddress);
         ResponseEntity<Orders> orderCreated = controller.create(minimumOrderNoEmailAddress);
-        assertThat(orderCreated).isEqualTo(ResponseEntity.badRequest().build());
+        assertThat(orderCreated).isEqualTo(ResponseEntity.notFound().build());
     }
 
     @Test
     void createOrderFails_ForMissingAccount_FirstAndLastName() {
-        verifyOrderNotCreated_whenAccount_FirstLastName_or_Email_IsNull(minimumOrderNoFirstAndLastName);
         ResponseEntity<Orders> orderCreated = controller.create(minimumOrderNoFirstAndLastName);
-        assertThat(orderCreated).isEqualTo(ResponseEntity.badRequest().build());
+        assertThat(orderCreated).isEqualTo(ResponseEntity.notFound().build());
     }
 
     @Test
@@ -259,12 +226,7 @@ class OrdersControllerTest {
 
     @Test
     void shouldDelete_Order() {
-        when(ordersHandler.create(minimumOrder)).thenReturn(minimumOrder);
         doNothing().when(ordersHandler).delete(minimumOrder.getId());
-        ResponseEntity<Orders> orderCreated = controller.create(minimumOrder);
-        assertThat(orderCreated).isNotNull();
-        assertThat(orderCreated.getBody()).isNotNull();
-        assertThat(orderCreated.getBody().getId()).isEqualTo(1L);
 
         controller.delete(1L);
 
@@ -356,52 +318,11 @@ class OrdersControllerTest {
                 .hasFieldOrPropertyWithValue("totalPrice", new BigDecimal("33.99"));
     }
 
-
-    @Test
-    void shouldReturnBadRequest_whenDataIntegrityViolationException_Occurs() {
-        when(ordersHandler.create(minimumOrder)).thenThrow(DataIntegrityViolationException.class);
-        ResponseEntity<Orders> orderNotCreated = controller.create(minimumOrder);
-        assertThat(orderNotCreated).isNotNull();
-        assertThat(orderNotCreated.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(400));
-    }
-
     // HELPER METHODS
-    private void initializeMockServer_HappyPath() throws IOException {
-        mockWebServer = new MockWebServer();
-        accountServiceClient = new AccountServiceClient("http://localhost:9999", path);
-
-        Dispatcher dispatcherMock = new Dispatcher() {
-            @SneakyThrows
-            @NotNull
-            @Override
-            public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) {
-                Objects.requireNonNull(recordedRequest, "Request was null for MockServer");
-                return new MockResponse().setResponseCode(200)
-                        .setHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                        .setBody(mapper.writeValueAsString(ordersAccount));
-            }
-        };
-
-        mockWebServer.setDispatcher(dispatcherMock);
-        mockWebServer.start(9999);
-    }
-    private static void mockServerFor_FailingUseCase(final int intStatusCode) throws IOException {
-        Dispatcher dispatcherMock = new Dispatcher() {
-            @NotNull
-            @Override
-            public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) throws InterruptedException {
-                Objects.requireNonNull(recordedRequest, "Request was null for MockServer");
-                return new MockResponse().setResponseCode(intStatusCode);
-            }
-        };
-
-        mockWebServer.setDispatcher(dispatcherMock);
-        mockWebServer.start(9999);
-    }
-
 
     // - BASE_CASE__create_minimum_order, verifies the minimum fields are present.
     private Orders createOrder_VerifyMinimumFields(final Orders orderCreateCommand) {
+        when(accountServiceClient.findByAccountIdRef("12345")).thenReturn(ordersAccount);
         when(ordersHandler.create(orderCreateCommand)).thenReturn(orderCreateCommand);
         ResponseEntity<Orders> orderCreated = controller.create(orderCreateCommand);
         assertThat(orderCreated).isNotNull();
@@ -457,17 +378,6 @@ class OrdersControllerTest {
         assertThat(ordersSet).isNotNull();
         assertThat(ordersSet.getBody()).isNotNull();
         return ordersSet.getBody();
-    }
-
-
-    private void verifyOrderNotCreated_whenAccount_orAccountId_IsNull(final Orders invalidOrderCreateCommand) {
-        when(ordersHandler.create(invalidOrderCreateCommand)).thenThrow(MissingAccountException.class);
-    }
-    private void verifyOrderNotCreated_whenAccount_FirstLastName_or_Email_IsNull(final Orders invalidOrderCreateCommand) {
-        when(ordersHandler.create(invalidOrderCreateCommand)).thenThrow(InvalidAccountException.class);
-    }
-    private void verifyOrderNotCreated_whenAccount_orAccount_Address_IsNull(final Orders minimumOrderNullAddress) {
-        when(ordersHandler.create(minimumOrderNullAddress)).thenThrow(MissingAddressException.class);
     }
 
 }

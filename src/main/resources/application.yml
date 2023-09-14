@@ -38,5 +38,5 @@ commerce:
   clients:
     accounts:
       serviceName: accounts-service
-
-      findbyIdUrl: /accounts/{id}
+      baseUrl: http://localhost:8000
+      findByAccountIdRefUrl: /accounts/{id}/reference

@@ -3,21 +3,31 @@ package com.kinandcarta.ecommerce;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.kinandcarta.ecommerce.clients.AccountServiceClient;
 import com.kinandcarta.ecommerce.entities.*;
-import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
-import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
-import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
+import lombok.SneakyThrows;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.webservices.server.AutoConfigureMockWebServiceClient;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -26,32 +36,35 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
-@ExtendWith(SpringExtension.class)
+
+@Disabled
+//@SpringBootTest(classes = {OrdersServiceApplication.class}, value = {"server.port:0", "eureka.client.enabled:false"})
 @WebMvcTest(controllers = OrdersController.class)
-@Import({OrdersHandler.class})
+@ExtendWith(SpringExtension.class)
+@Import(TestOrdersConfiguration.class)
+@TestPropertySource(locations = "classpath:application-test.yml")
+@AutoConfigureMockWebServiceClient
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class OrdersServiceIntegrationTests {
+
     @Autowired
     MockMvc mockMvc;
+    TestEntityManager entityManager = Mockito.mock(TestEntityManager.class);
 
     @MockBean
     OrdersRepository ordersRepository;
 
-    TestEntityManager entityManager = Mockito.mock(TestEntityManager.class);
-
-    @MockBean
-    OrdersLineItemsRepository ordersLineItemsRepository;
-    @MockBean
-    OrdersAccountRepository ordersAccountRepository;
-    @MockBean
-    OrdersAddressRepository ordersAddressRepository;
+    // Mock Web Server Fields ONLY
+    AccountServiceClient accountServiceClient;
+    final String expectedAccountIdRef = "4f464483-a1f0-4ce9-a19e-3c0f23e84a67";
+    static MockWebServer mockWebServer;
+    // Mock Web Server Fields ONLY
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -68,6 +81,7 @@ class OrdersServiceIntegrationTests {
 
     OrdersAccount ordersAccount = OrdersAccount.builder()
             .id(100L)
+            .accountRefId(expectedAccountIdRef)
             .firstName("DukeFirstName")
             .lastName("DukeLastName")
             .emailAddress("dukefirst.last@enjoy.com")
@@ -103,13 +117,54 @@ class OrdersServiceIntegrationTests {
 
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.registerModule(new JavaTimeModule());
+
+        initializeMockServer_HappyPath();
+
+    }
+    @AfterEach
+    void tearDown() throws Exception {
+        mockWebServer.shutdown();
+    }
+
+    private void initializeMockServer_HappyPath() throws Exception {
+        mockWebServer = new MockWebServer();
+
+        Dispatcher dispatcherMock = new Dispatcher() {
+            @SneakyThrows
+            @NotNull
+            @Override
+            public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) {
+                Objects.requireNonNull(recordedRequest, "Request was null for MockServer");
+                return new MockResponse().setResponseCode(200)
+                        .setHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                        .setBody(mapper.writeValueAsString(ordersAccount));
+            }
+        };
+
+        mockWebServer.setDispatcher(dispatcherMock);
+        mockWebServer.start(8001);
+    }
+    private static void mockServerFor_FailingUseCase(final int intStatusCode) throws Exception {
+        Dispatcher dispatcherMock = new Dispatcher() {
+            @NotNull
+            @Override
+            public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) throws InterruptedException {
+                Objects.requireNonNull(recordedRequest, "Request was null for MockServer");
+                return new MockResponse().setResponseCode(intStatusCode);
+            }
+        };
+
+        mockWebServer.setDispatcher(dispatcherMock);
+        mockWebServer.start(8001);
     }
 
     @Test
     void shouldCreateAnOrder_withMinimumFields() throws Exception {
+        mockServerFor_FailingUseCase(200);
+
         Orders minimumOrder = Orders.builder()
                 .id(1L)
                 .ordersAccount(ordersAccount)

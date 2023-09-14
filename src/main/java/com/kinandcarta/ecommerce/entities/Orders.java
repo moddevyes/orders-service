@@ -59,7 +59,7 @@ public class Orders {
     private Instant updateDateTime;
 
     @ToString.Exclude
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL)
     private Set<OrderLineItems> orderLineItems;
 
     public BigDecimal sumLineItems(final Set<OrderLineItems> lineItems) {

@@ -1,14 +1,13 @@
 FROM eclipse-temurin:17-jdk-alpine
-VOLUME /tmp
+WORKDIR /opt/commerceapps
 EXPOSE 8004
 ARG JAR_FILE=build/libs/orders-service-0.0.1.jar
-ARG JAR_FILE
 COPY ${JAR_FILE} orders-service-0.0.1.jar
-ENTRYPOINT ["java","-jar","/orders-service-0.0.1.jar"]
+ENTRYPOINT ["java","-jar","orders-service-0.0.1.jar"]
 
 
 # BUILD
-# docker build -t orders-service .
+# docker build -t orders-service:latest .
 
 # IMAGE built and in docker
 

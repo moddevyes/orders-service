@@ -1,0 +1,16 @@
+server:
+  port: 0
+
+eureka:
+  client:
+    enabled: false
+
+commerce:
+  registry:
+    user: eurekausr
+    passwd: eurekapasswd
+  clients:
+    accounts:
+      serviceName: accounts-service
+      baseUrl: http://localhost:9999
+      findByAccountIdRefUrl: /accounts/{id}/reference

@@ -2,35 +2,38 @@ package com.kinandcarta.ecommerce.clients;
 
 import com.kinandcarta.ecommerce.entities.OrdersAccount;
 import com.kinandcarta.ecommerce.exceptions.AccountNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
 @Component
+@Slf4j
 public class AccountServiceClient {
-    String baseURL;
-    String getAccountIdUri;
-    WebClient client;
+    @Value("${commerce.clients.accounts.baseUrl}") String baseURL;
 
-
-    public AccountServiceClient(@Value("${commerce.clients.accounts.baseUrl}") final String baseURL,
-                                @Value("${commerce.clients.accounts.findByAccountIdRefUrl}") final String getAccountIdUri) {
-        this.client = WebClient.builder().baseUrl(baseURL).build();
-        this.baseURL = baseURL;
-        this.getAccountIdUri = getAccountIdUri;
-    }
+    @Value("${commerce.clients.accounts.findByAccountIdRefUrl}") String getAccountIdUri;
 
     public OrdersAccount findByAccountIdRef(final String id) throws AccountNotFoundException {
         Objects.requireNonNull(id, "Account Id REF required to find account using client.");
-
+        log.info("findByAccountIdRef, baseURL " + this.baseURL + ", path " + this.getAccountIdUri + ", id " + id);
+        WebClient client = WebClient.create(this.baseURL);
         Mono<OrdersAccount> accountFound =
-                client.get().uri(this.getAccountIdUri, id)
+                client.get()
+                        .uri(uriBuilder -> uriBuilder.path(this.getAccountIdUri).build(id))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .acceptCharset(StandardCharsets.UTF_8)
                     .retrieve()
-                    .bodyToMono(OrdersAccount.class);
+                    .bodyToMono(OrdersAccount.class)
+                        .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)));
 
         if (accountFound.map(this::toOrdersAccount).blockOptional().isEmpty()) {
             throw new AccountNotFoundException("Account not found for accountIdRef: " + id);

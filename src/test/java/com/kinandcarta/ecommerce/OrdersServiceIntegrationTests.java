@@ -1,17 +1,14 @@
 package com.kinandcarta.ecommerce;
 
 import com.kinandcarta.ecommerce.clients.AccountServiceClient;
-import com.kinandcarta.ecommerce.entities.AccountOrderDetails;
 import com.kinandcarta.ecommerce.entities.OrderLineItems;
 import com.kinandcarta.ecommerce.entities.Orders;
-import com.kinandcarta.ecommerce.entities.ShippingAddressDTO;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAccountRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersAddressRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersLineItemsRepository;
 import com.kinandcarta.ecommerce.infrastructure.OrdersRepository;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,8 +34,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 
-//@Disabled
-//@SpringBootTest(classes = {OrdersServiceApplication.class}, value = {"server.port:0", "eureka.client.enabled:false"})
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 @Slf4j

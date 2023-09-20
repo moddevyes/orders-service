@@ -2,9 +2,9 @@ spring:
   application:
     name: orders-service
   datasource:
-    url: jdbc:mysql://${DATA_HOSTNAME:localhost}:3333/ecommerce_orders_db?&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${DATA_USERNAME:davidking}
-    password: ${DATA_PASSWORD:davidking!!}
+    url: jdbc:mysql://localhost:3333/ecommerce_orders_db?&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${SPRING_DATASOURCE_USERNAME:davidking}
+    password: ${SPRING_DATASOURCE_PASSWORD:davidking!!}
   jpa:
     properties:
       hibernate:

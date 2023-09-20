@@ -1,13 +1,13 @@
 FROM eclipse-temurin:17-jdk-alpine
-WORKDIR /opt/commerceapps
 EXPOSE 8004
+RUN mkdir /opt/commerceapps
 ARG JAR_FILE=build/libs/orders-service-0.0.1.jar
-COPY ${JAR_FILE} orders-service-0.0.1.jar
-ENTRYPOINT ["java","-jar","orders-service-0.0.1.jar"]
+COPY ${JAR_FILE} /opt/commerceapps/orders-service-0.0.1.jar
+ENTRYPOINT ["java","-jar","/opt/commerceapps/orders-service-0.0.1.jar"]
 
 
 # BUILD
-# docker build -t orders-service:latest .
+# docker build -t orders-service .
 
 # IMAGE built and in docker
 
@@ -25,4 +25,6 @@ ENTRYPOINT ["java","-jar","orders-service-0.0.1.jar"]
 # docker inspect message-server
 # docker stop message-server
 # docker rm message-server
+# What's Next?
+  #  View a summary of image vulnerabilities and recommendations → docker scout quickview
 

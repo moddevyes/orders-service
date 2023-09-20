@@ -1,0 +1,13 @@
+
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3301/ecommerce_orders_db?&useSSL=false&allowPublicKeyRetrieval=true
+SPRING_DATASOURCE_USERNAME=davidking
+SPRING_DATASOURCE_PASSWORD=davidking!!
+SPRING_JPA_PROPERTIES.HIBERNATE.DIALECT=org.hibernate.dialect.MySQLDialect
+SPRING_JPA_PROPERTIES.DATABASE-PLATFORM=org.hibernate.dialect.MySQLDialect
+
+SPRING_APPLICATION_NAME=orders-service
+SPRING_CLOUD_CLIENT_HOSTNAME=orders-service
+
+EUREKA_INSTANCE_HOSTNAME=commerce-registry-service
+EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://${eureka.instance.hostname}:8761/eureka/
+EUREKA_CLIENT_INSTANCE.APPNAME=commerce-orders-service

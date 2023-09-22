@@ -38,3 +38,17 @@ DELETE: order + order line items
 4. Update product id, does the product exist, if so, get the quantity and price for that order line item?
 5. Nothing about order confirmed, so send order line items and other data (event, service endpoint) to create a new shipment?
 6. DELETE order is cancellation?
+
+## Local build and testing
+
+* Build, gradle clean build bootRun
+
+## DOCKER build and testing
+
+* Run script
+    - accounts-docker.sh
+
+- Pre-requisites
+
+1. Docker installation required, linux for script build with docker, docker-compose
+2. Normal gradle clean and build *before* running docker script

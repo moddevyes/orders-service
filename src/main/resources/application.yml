@@ -2,7 +2,7 @@ spring:
   application:
     name: orders-service
   datasource:
-    url: jdbc:mysql://localhost:3333/ecommerce_orders_db?&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${mysqldocker.orders.container.name:localhost}:3309/ecommerce_orders_db?&useSSL=false&allowPublicKeyRetrieval=true
     username: ${SPRING_DATASOURCE_USERNAME:davidking}
     password: ${SPRING_DATASOURCE_PASSWORD:davidking!!}
   jpa:
@@ -21,22 +21,39 @@ server:
   port: 8004
 
 eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
   instance:
-    statusPageUrl: https://${eureka.hostname}/info
-    healthCheckUrl: https://${eureka.hostname}/health
-    homePageUrl: https://${eureka.hostname}/
-    appname: orders-service
+    hostname: orders-service
+    prefer-ip-address: true
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761}/eureka
+
+# docker custom variables
+mysqldocker:
+  accounts:
+    container:
+      name: accounts_mysql_container
+  orders:
+    container:
+      name: orders_mysql_container
+  products:
+    container:
+      name: products_mysql_container
+  shipments:
+    container:
+      name: shipments_mysql_container
 
 commerce:
+  accounts:
+    service:
+      container: commerce-accounts-service-container
   registry:
     user: eurekausr
     passwd: eurekapasswd
   clients:
     accounts:
       serviceName: accounts-service
-      baseUrl: http://localhost:8000
+      baseUrl: http://${commerce-accounts-service-container:localhost}:8000
       findByAccountIdRefUrl: /accounts/{id}/reference

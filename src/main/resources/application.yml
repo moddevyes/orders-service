@@ -46,14 +46,12 @@ mysqldocker:
       name: shipments_mysql_container
 
 commerce:
-  accounts:
-    service:
-      container: commerce-accounts-service-container
   registry:
     user: eurekausr
     passwd: eurekapasswd
   clients:
     accounts:
       serviceName: accounts-service
-      baseUrl: http://${commerce-accounts-service-container:localhost}:8000
+      port: 8001
+      baseUrl: http://${commerce.clients.accounts.serviceName:localhost}:8001
       findByAccountIdRefUrl: /accounts/{id}/reference
